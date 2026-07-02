@@ -12,7 +12,7 @@ async function criarconta(){
 	senha: document.getElementById("senha").value,
     };
 
-    confirma_senha = document.getElementById("confirma_senha").value;
+    const confirma_senha = document.getElementById("confirma_senha").value;
 
     if(dados.senha !== confirma_senha){
 	alert("Senhas diferem!");
