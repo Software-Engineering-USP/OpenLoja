@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop's Frontpage</title>
+    <!-- CDN Correta do Font Awesome para os ícones funcionarem -->
+    <link rel="stylesheet" href="https://cloudflare.com">
+    <link rel="stylesheet" href="../static/frontpage.css">
+</head>
+<body>
+
+    <header class="shop-header">
+        <!-- Top Announcement Bar -->
+        <div class="top-bar">
+            <p>Frete grátis em compras acima de 100 reais! <a href="#deals">Shop Now</a></p>
+        </div>
+
+        <!-- Main Navigation Bar -->
+        <nav class="navbar">
+            <!-- Search Bar (Busca em tempo real via JS) -->
+            <div class="search-container">
+                <input type="text" id="js-search-input" placeholder="Pesquise por nossos produtos...">
+                <button type="button"><i class="fas fa-search"></i></button>
+            </div>
+
+            <!-- Navigation Links -->
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about-us" class="active">Sobre nós</a></li>
+                <li><a href="#catalogo">Catalogo</a></li>
+            </ul>
+
+            <!-- Shop Icons / Utilities -->
+            <div class="header-icons">
+                <a href="#account" title="Conta"><i class="far fa-user"></i></a>
+                <a href="#wishlist" title="Lista de desejos" class="icon-badge-container">
+                    <i class="far fa-heart"></i>
+                    <span class="badge">0</span>
+                </a>
+                <a href="#cart" title="Carrinho" class="icon-badge-container">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge">3</span>
+                </a>
+            </div>
+            
+            <div class="logo">
+                <a href="#home"><span>Nome da </span>Loja!</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="frontpage-content">
+        
+        <section class="catalog-section">
+            <div class="catalog-header">
+                <h2>Últimas Novidades</h2>
+                
+                <!-- Filtros por Tags/Categorias -->
+                <div class="tag-filters">
+                    <button class="tag-btn active" data-tag="all">Todos</button>
+                    <button class="tag-btn" data-tag="roupas">Tipo 1</button>
+                    <button class="tag-btn" data-tag="calcados">Tipo 2</button>
+                    <button class="tag-btn" data-tag="acessorios">Tipo 3</button>
+                </div>
+            </div>
+
+            <!-- Grid de Produtos Dinâmico -->
+            <div class="product-grid" id="product-grid">
+                
+                <!-- LOOP DO BACKEND (Exemplo em Jinja2/Python. Ajuste a sintaxe conforme sua tecnologia) -->
+                {% for produto in produtos %}
+                <article class="product-card" data-tags="{{ produto.tag }}">
+                    <div class="product-image">
+                        <span class="card-badge new-badge">Novo</span>
+                        <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">{{ produto.nome }}</h3>
+                        <p class="product-category">{{ produto.categoria }}</p>
+                        <p class="product-price">R$ {{ produto.preco }}</p>
+                        <button class="buy-btn" data-id="{{ produto.id }}">Adicionar ao Carrinho</button>
+                    </div>
+                </article>
+                {% endfor %}
+
+            </div>
+
+            <!-- Mensagem caso nenhum item seja encontrado após o filtro JS -->
+            <div id="no-results" class="hidden-message">Nenhum produto encontrado para a sua busca.</div>
+        </section>
+    </main>
+
+    <!-- Script de Filtro Integrado -->
+    <script src="../static/frontpage.js"></script>
+</body>
+</html>
