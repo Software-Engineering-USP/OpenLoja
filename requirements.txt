@@ -1,2 +1,3 @@
 fastapi[standard]
 sqlmodel
+pre-commit
