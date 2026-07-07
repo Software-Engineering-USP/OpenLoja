@@ -3,3 +3,4 @@ venv
 __pycache__
 *~
 database.db
+node_modules

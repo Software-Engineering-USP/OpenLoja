@@ -43,7 +43,7 @@
                     <span class="badge">3</span>
                 </a>
             </div>
-            
+
             <div class="logo">
                 <a href="#home"><span>Nome da </span>Loja!</a>
             </div>
@@ -51,11 +51,11 @@
     </header>
 
     <main class="frontpage-content">
-        
+
         <section class="catalog-section">
             <div class="catalog-header">
                 <h2>Últimas Novidades</h2>
-                
+
                 <!-- Filtros por Tags/Categorias -->
                 <div class="tag-filters">
                     <button class="tag-btn active" data-tag="all">Todos</button>
@@ -67,7 +67,7 @@
 
             <!-- Grid de Produtos Dinâmico -->
             <div class="product-grid" id="product-grid">
-                
+
                 <!-- LOOP DO BACKEND (Exemplo em Jinja2/Python. Ajuste a sintaxe conforme sua tecnologia) -->
                 {% for produto in produtos %}
                 <article class="product-card" data-tags="{{ produto.tag }}">
