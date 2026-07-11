@@ -11,10 +11,6 @@
 <body>
 
     <header class="shop-header">
-        <!-- Top Announcement Bar -->
-        <div class="top-bar">
-            <p>Frete grátis em compras acima de 100 reais! <a href="#deals">Shop Now</a></p>
-        </div>
 
         <!-- Main Navigation Bar -->
         <nav class="navbar">
@@ -28,7 +24,7 @@
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#about-us" class="active">Sobre nós</a></li>
-                <li><a href="#catalogo">Catalogo</a></li>
+                <li><a href="#catalogo">Catálogo</a></li>
             </ul>
 
             <!-- Shop Icons / Utilities -->
@@ -54,7 +50,6 @@
 
         <section class="catalog-section">
             <div class="catalog-header">
-                <h2>Últimas Novidades</h2>
 
                 <!-- Filtros por Tags/Categorias -->
                 <div class="tag-filters">
@@ -71,12 +66,14 @@
                 <!-- LOOP DO BACKEND (Exemplo em Jinja2/Python. Ajuste a sintaxe conforme sua tecnologia) -->
                 {% for produto in produtos %}
                 <article class="product-card" data-tags="{{ produto.tag }}">
-                    <div class="product-image">
+                    <a href="/product/{{ produto.id }}" class="product-image">
                         <span class="card-badge new-badge">Novo</span>
                         <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
-                    </div>
+                    </a>
                     <div class="product-info">
-                        <h3 class="product-title">{{ produto.nome }}</h3>
+                        <a href="/product/{{ produto.id }}" class="product-title-link">
+                            <h3 class="product-title">{{ produto.nome }}</h3>
+                        </a>
                         <p class="product-category">{{ produto.categoria }}</p>
                         <p class="product-price">R$ {{ produto.preco }}</p>
                         <button class="buy-btn" data-id="{{ produto.id }}">Adicionar ao Carrinho</button>

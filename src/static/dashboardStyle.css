@@ -1,0 +1,226 @@
+/* Extensão de homeStyle.css para as páginas de Stock e Statistics */
+
+/* Cards clicáveis na home do dono */
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.card-link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 34px rgba(15, 23, 42, 0.12);
+}
+
+.see-more-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+.see-more-link:hover {
+  text-decoration: underline;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.toolbar input {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #dde1ec;
+  font-size: 14px;
+}
+
+.primary-btn {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.primary-btn:hover {
+  background: #2563eb;
+}
+
+.secondary-btn {
+  background: #e5e7eb;
+  color: #111827;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.secondary-btn:hover {
+  background: #d1d5db;
+}
+
+/* Tabela */
+.table-wrapper {
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+  padding: 10px 22px;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 14px 10px;
+  color: #6b7280;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 2px solid #eceef6;
+}
+
+.data-table td {
+  padding: 14px 10px;
+  border-bottom: 1px solid #eceef6;
+  font-size: 15px;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.tag {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.tag-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.tag-warning {
+  background: #fef9c3;
+  color: #a16207;
+}
+.tag-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.icon-btn {
+  border: 1px solid #dde1ec;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  color: #374151;
+}
+.icon-btn:hover {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+.danger-btn:hover {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.empty-row {
+  text-align: center;
+  color: #9ca3af;
+  padding: 30px 0;
+}
+
+/* Layout de duas colunas para statistics */
+.stats-panel.two-col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 800px) {
+  .stats-panel.two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.review-row {
+  align-items: flex-start;
+}
+.review-nota {
+  color: #f59e0b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.review-texto {
+  color: #4b5563;
+  text-align: right;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 26px;
+  width: 90%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-content h2 {
+  margin: 0 0 6px;
+}
+.modal-content input {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #dde1ec;
+  font-size: 14px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
