@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Statistics</title>
+    <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div class="brand-info">
+                    <h1>Statistics</h1>
+                    <p>Monthly performance overview for your shop.</p>
+                </div>
+            </div>
+            <nav class="action-buttons">
+                <a href="/home">Home</a>
+                <a href="/stock">Stock</a>
+                <a href="/orders">Orders</a>
+                <a href="/settings">Settings</a>
+            </nav>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Monthly Revenue</h2>
+                <div class="value">${{ estatisticas.receita_mensal }}</div>
+                <small>Revenue generated this month</small>
+            </div>
+            <div class="card">
+                <h2>Sales This Month</h2>
+                <div class="value">{{ estatisticas.vendas_mes }}</div>
+                <small>Total reservations completed</small>
+            </div>
+            <div class="card">
+                <h2>Average Rating</h2>
+                <div class="value">{{ estatisticas.nota_media }}</div>
+                <small>Average across all products</small>
+            </div>
+        </div>
+
+        <div class="stats-panel two-col">
+            <div class="panel">
+                <h2>Revenue Over Time</h2>
+                <canvas id="revenue-chart" height="220"></canvas>
+            </div>
+
+            <div class="panel">
+                <h2>Top Selling Products</h2>
+                <!-- BACKEND LOOP (Jinja2) -->
+                {% for produto in top_produtos %}
+                <div class="stat-row">
+                    <span>{{ produto.nome }}</span>
+                    <span>{{ produto.vendas }} sold</span>
+                </div>
+                {% else %}
+                <p class="empty-row">No sales data yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="panel">
+                <h2>Recent Reviews</h2>
+                <!-- BACKEND LOOP (Jinja2) -->
+                {% for avaliacao in avaliacoes_recentes %}
+                <div class="stat-row review-row">
+                    <span class="review-nota">★ {{ avaliacao.nota }}</span>
+                    <span class="review-texto">{{ avaliacao.texto }}</span>
+                </div>
+                {% else %}
+                <p class="empty-row">No reviews yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <script src="../static/statisticsScript.js"></script>
+</body>
+</html>

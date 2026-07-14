@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock</title>
+    <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div class="brand-info">
+                    <h1>Estoque</h1>
+                </div>
+            </div>
+            <nav class="action-buttons">
+                <a href="/homeOwner">Home</a>
+                <a href="/statistics">Estatísticas</a>
+                <a href="/orders">Pedidos</a>
+                <a href="/settings">Configurações</a>
+            </nav>
+        </header>
+
+        <div class="toolbar">
+            <input type="text" id="stock-search" placeholder="Search product by name...">
+            <button type="button" id="add-product-btn" class="primary-btn">+ Add Product</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="stock-table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Quantidade em estoque</th>
+                        <th>Preço</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- BACKEND LOOP (Jinja2) -->
+                    {% for produto in produtos %}
+                    <tr data-id="{{ produto.id }}" data-nome="{{ produto.nome|lower }}">
+                        <td class="product-cell">
+                            <span class="product-name">{{ produto.nome }}</span>
+                        </td>
+                        <td>{{ produto.quantidade_em_estoque }}</td>
+                        <td>${{ produto.preco }}</td>
+                        <td>
+                            {% if produto.quantidade_em_estoque == 0 %}
+                            <span class="tag tag-danger">Fora de estoque</span>
+                            {% elif produto.quantidade_em_estoque < 10 %}
+                            <span class="tag tag-warning">Pouco em estoque</span>
+                            {% else %}
+                            <span class="tag tag-ok">Em estoque</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <a href="/product/{{ produto.id }}" class="icon-btn" title="View">Ver</a>
+                            <button type="button" class="icon-btn edit-btn" data-id="{{ produto.id }}" title="Edit">EEditar</button>
+                            <button type="button" class="icon-btn danger-btn delete-btn" data-id="{{ produto.id }}" title="Delete">Deletar</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="empty-row">Nenhum produto registrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de adicionar/editar produto -->
+    <div id="product-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Adicionar Produto</h2>
+            <input type="hidden" id="modal-produto-id">
+            <input type="text" id="modal-nome" placeholder="Nome do produto">
+            <input type="number" id="modal-quantidade" placeholder="Quantidade em estoque" min="0">
+            <input type="number" id="modal-preco" placeholder="Preço" min="0" step="0.01">
+            <div class="modal-actions">
+                <button type="button" id="modal-cancel" class="secondary-btn">Cancelar</button>
+                <button type="button" id="modal-save" class="primary-btn">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/stockScript.js"></script>
+</body>
+</html>

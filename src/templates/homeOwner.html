@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shop Owner Dashboard</title>
+    <title>Dashboard do Vendedor</title>
     <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
 </head>
 <body>
     <div class="container">
@@ -12,55 +13,46 @@
             <div class="brand">
                 <div class="brand-icon">S</div>
                 <div class="brand-info">
-                    <h1>Shop Owner Home</h1>
-                    <p>Quick access to stock, sales, and monthly analysis.</p>
+                    <h1>Dashboard do Vendedor</h1>
                 </div>
             </div>
             <nav class="action-buttons">
-                <a href="/stock">Stock</a>
-                <a href="/statistics">Statistics</a>
-                <a href="/orders">Orders</a>
-                <a href="/settings">Settings</a>
+                <a href="/homeOwner">Home</a>
+                <a href="/stock">Estoque</a>
+                <a href="/statistics">Estatísticas</a>
+                <a href="/orders">Pedidos</a>
+                <a href="/settings">Configurações</a>
             </nav>
         </header>
 
         <div class="dashboard-grid">
-            <div class="card">
-                <h2>Monthly Revenue</h2>
+            <a class="card card-link" href="/statistics">
+                <h2>Receita Mensal</h2>
                 <div class="value">XX</div>
-                <small>Revenue generated this month</small>
-            </div>
-            <div class="card">
-                <h2>Items in Stock</h2>
+            </a>
+            <a class="card card-link" href="/stock">
+                <h2>Itens em Estoque</h2>
                 <div class="value">XX</div>
-                <small>Total inventory count</small>
-            </div>
-            <div class="card">
-                <h2>Stock Value</h2>
-                <div class="value">$18,200</div>
-                <small>Estimated money tied in stock</small>
-            </div>
+            </a>
+            <a class="card card-link" href="/stock">
+                <h2>Valor do Estoque</h2>
+                <div class="value">XX</div>
+                <small>Valor estimado do estoque</small>
+            </a>
         </div>
 
         <div class="stats-panel">
             <div class="panel">
-                <h2>Monthly Dashboard</h2>
+                <h2>Dashboard Mensal</h2>
                 <div class="stat-row">
-                    <span>Sales this month</span>
+                    <span>Vendas deste mês</span>
                     <span>XX</span>
                 </div>
                 <div class="stat-row">
-                    <span>New customers</span>
+                    <span>Novos clientes</span>
                     <span>XX</span>
                 </div>
-                <div class="stat-row">
-                    <span>Best selling category</span>
-                    <span>Electronics</span>
-                </div>
-                <div class="stat-row">
-                    <span>Stock turnover</span>
-                    <span>XX</span>
-                </div>
+                <a href="/statistics" class="see-more-link">Ver estatísticas completas</a>
             </div>
         </div>
     </div>
