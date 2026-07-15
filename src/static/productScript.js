@@ -49,7 +49,9 @@ document
     const produtoId = document.getElementById("delete-product-btn").dataset.id;
 
     // ATUALIZAR COM A ROTA DE DELETAR PRODUTO
-    const resposta = await fetch(`/ROTA/${produtoId}`, { method: "DELETE" });
+    const resposta = await fetch(`/produtos/${produtoId}`, {
+      method: "DELETE",
+    });
 
     if (resposta.ok) {
       window.location.href = "/stock";
