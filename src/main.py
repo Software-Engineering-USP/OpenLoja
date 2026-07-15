@@ -1,8 +1,11 @@
 # imports necessários para o funcionamento do projeto
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response, Form
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlmodel import SQLModel, create_engine
+from typing import Annotated
+from sqlmodel import SQLModel, create_engine, Session, select
+from models import Vendedor, Cliente, Produto, Reserva, Avaliacao
 
 # setup do Fastapi
 app = FastAPI()
@@ -28,3 +31,79 @@ def on_startup() -> None:
 @app.get("/")
 async def root(request: Request):
     return templates.TemplateResponse(request=request, name="createAccount.html")
+
+# rota para login
+@app.get("/paginalogin", response_class=HTMLResponse)
+async def paginalogin(request: Request):
+    return templates.TemplateResponse(request=request, name="login.html")
+
+# rota para criação de usuários no database
+@app.post("/criarusuario")
+async def criar_usuario(user : Vendedor):
+    with Session(engine) as session:
+        busca = session.exec(select(Vendedor).where(Vendedor.nome == user.nome)).first()
+        if busca:
+            raise HTTPException(status_code=404, detail="Usuário já existente.")
+
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+    return {"usuario": user.nome}
+        
+
+# rota para login com usuário e senha
+@app.post("/login")
+def logar(nome: str, senha: str, response: Response):
+    with Session(engine) as session:
+        user = select(Vendedor).where(Vendedor.nome == nome)
+        usuario_encontrado = session.exec(user).first()
+        
+        if not usuario_encontrado:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        
+        if usuario_encontrado.senha != senha:
+            raise HTTPException(status_code=404, detail="Senha incorreta")
+        
+        response.set_cookie(key="session_user", value=nome)
+        return {"message": "Logado com sucesso"}
+
+
+# função auxiliar que captura o usuário logado no cookie
+def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
+
+    if not session_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Acesso negado: você não está logado."
+        )
+
+    with Session(engine) as session:
+        busca = select(Vendedor).where(Vendedor.nome == session_user)
+        user = session.exec(busca).first()
+
+        if not user:
+            raise HTTPException(status_code=401, detail="Sessão inválida")
+
+        return user
+
+# rota para o acesso à home do lojista
+@app.get("/home")
+def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
+    return templates.TemplateResponse(
+        request=request,
+        name="homeOwner.html"
+    ) 
+
+
+# rota auxiliar para visualizar os usuários criados
+@app.get("/db")
+def visualizar_db():
+    with Session(engine) as session:
+        return {
+            "clientes": session.exec(select(Cliente)).all(),
+            "vendedores": session.exec(select(Vendedor)).all(),
+            "produtos": session.exec(select(Produto)).all(),
+            "reservas": session.exec(select(Reserva)).all(),
+            "avaliacoes": session.exec(select(Avaliacao)).all(),
+        }

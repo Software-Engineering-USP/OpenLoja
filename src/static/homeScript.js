@@ -1,14 +1,14 @@
 function pagina_criarconta() {
-  window.location.href = "/criarcontahtml";
+  window.location.href = "/";
 }
 
 function pagina_login() {
-  window.location.href = "/";
+  window.location.href = "/paginalogin";
 }
 
 async function criarconta() {
   const dados = {
-    usuario: document.getElementById("usuario").value,
+    nome: document.getElementById("usuario").value,
     senha: document.getElementById("senha").value,
   };
 
@@ -19,8 +19,7 @@ async function criarconta() {
     return;
   }
 
-  // PRECISA ATUALIZAR COM A ROTA DE CRIAR USUARIOS
-  const resposta = await fetch("/ROTA", {
+  const resposta = await fetch("/criarusuario", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,14 +39,12 @@ async function login() {
   const usuario = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
-  // ATUALIZAR COM A ROTA DE LOGIN
-  const resposta = await fetch("/ROTA?usuario=" + usuario + "&senha=" + senha, {
+  const resposta = await fetch("/login?nome=" + usuario + "&senha=" + senha, {
     method: "POST",
   });
 
   if (resposta.ok) {
-    // ATUALIZAR COM A ROTA PARA A HOME DO VENDEDOR
-    window.location.href = "/ROTA";
+    window.location.href = "/home";
   } else {
     alert("Usuário ou senha incorretos.");
   }
