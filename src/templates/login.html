@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenLoja</title>
+  <link rel="stylesheet" href="/static/homeStyle.css">
+  
+</head>
+<body>
+  <div id="container">
+    
+    <div id="title">
+      <img src="/static/icone.png" id="icone"> </img>
+      <h1>Faça login</h1>
+    </div>
+    
+    <div>
+      <form>
+	<input type="text" id="usuario" placeholder="Usuario">
+	<input type="password" id="senha" placeholder="Senha"> 
+
+	<div id="divisao">
+	  <button type="button" id="botao_criarconta" onclick="pagina_criarconta()">Criar Conta</button>
+	  <button type="button" id="enviar" onclick="login()" >Entrar</button>
+	</div>
+	
+      </form>
+    </div>
+  </div>
+  
+  <script src="/static/homeScript.js"></script>
+  
+</body>
+</html>
