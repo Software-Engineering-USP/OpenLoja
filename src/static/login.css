@@ -1,0 +1,156 @@
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1vh;
+    margin-bottom: 10vh;
+}
+
+#container {
+    display: flex;
+    flex-direction: column;
+    text-align: center; 
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    width: 40vw;
+    height: 80vh;
+    border-radius: 50px;
+    color:  #1d4ed8;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+}
+
+#container > div {
+    flex: 1;
+}
+
+#container > div:last-child {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1.5;
+}
+
+#container > div:first-child {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+div {
+    word-warp: break-word;
+    overflow-warp: break-word;
+}
+
+h1 {
+    font-size: 28px;
+    font-weight: 500;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    height: 100vh;            
+    margin: 0;   
+    background-color: #f4f6fb;
+    font-family: 'Roboto', sans-serif;
+}
+
+#icone {
+    width: 10vw;
+    height: auto;
+    margin-top: 10vh;
+    
+}
+
+input {
+    width: 25vw;
+    height: 5vh;
+    font-size: 16px;
+    padding: 5px 10px;
+    border-radius: 12px;
+}
+
+#enviar {
+    width: 7vw;
+    height: 5vh;
+    font-size: 16px;
+    padding: 5px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    border: none;
+    background-color: #1d4ed8;
+    color: #fff;
+}
+
+#enviar:hover {
+    background-color: #2563eb;
+}
+
+#divisao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1vw;
+    width: 100%;
+    margin-top: 4vh;
+}
+
+#botao_criarconta {
+    width: 7vw;
+    height: 5vh;
+    font-size: 16px;
+    padding: 5px 10px;
+    border-radius: 12px;
+    background: none;
+    border: none;
+    color: #1d4ed8;
+    cursor: pointer;
+}
+
+#botao_criarconta:hover {
+    color: #C0D0FF;
+    background-color: #2563eb;;
+}
+
+@media (max-width: 800px) {
+
+    #icone {
+	width: 20vw;
+    }
+    
+    #botao_criarconta {
+	height: 7vh;
+	width: 20vw;
+    }
+
+    #enviar {
+	height: 7vh;
+	width: 20vw;
+    }
+
+    form {
+	margin-bottom: 10vh;
+    }
+
+    #senha {
+	width: 50vw;
+    }
+
+    #usuario {
+	width: 50vw;
+    }
+
+    #confirma_senha {
+	width: 50vw;
+    }
+    
+    #divisao {
+	flex-direction: column;
+    }
+    
+}
