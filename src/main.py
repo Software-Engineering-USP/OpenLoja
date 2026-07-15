@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
-from models import Vendedor, Cliente, Loja, Produto, Reserva, Avaliacao
+from models import Vendedor, Cliente, Produto, Reserva, Avaliacao
 
 # setup do Fastapi
 app = FastAPI()
@@ -86,11 +86,6 @@ def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
     return user
 
 
-# função auxiliar que busca a loja do vendedor logado
-def get_loja_do_usuario(user: Vendedor, session: Session) -> Loja | None:
-    return session.exec(select(Loja).where(Loja.vendedor_id == user.id)).first()
-
-
 # rota para o acesso à home do lojista
 @app.get("/home")
 def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
@@ -101,12 +96,7 @@ def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
 @app.get("/stock")
 def stock(request: Request, user: Vendedor = Depends(get_active_user)):
     with Session(engine) as session:
-        loja = get_loja_do_usuario(user, session)
-        produtos = (
-            session.exec(select(Produto).where(Produto.loja_id == loja.id)).all()
-            if loja
-            else []
-        )
+        produtos = session.exec(select(Produto)).all() if user else []
 
     return templates.TemplateResponse(
         request=request, name="stock.html", context={"produtos": produtos}
@@ -121,17 +111,11 @@ def statistics(request: Request, user: Vendedor = Depends(get_active_user)):
     avaliacoes_recentes = []
 
     with Session(engine) as session:
-        loja = get_loja_do_usuario(user, session)
-
-        if loja:
-            produtos = session.exec(
-                select(Produto).where(Produto.loja_id == loja.id)
-            ).all()
+        if user:
+            produtos = session.exec(select(Produto)).all()
             produto_ids = [p.id for p in produtos]
 
-            reservas = session.exec(
-                select(Reserva).where(Reserva.loja_id == loja.id)
-            ).all()
+            reservas = session.exec(select(Reserva)).all()
             estatisticas["vendas_mes"] = len(reservas)
 
             produtos_por_id = {p.id: p for p in produtos}
@@ -176,7 +160,7 @@ def statistics(request: Request, user: Vendedor = Depends(get_active_user)):
 
     return templates.TemplateResponse(
         request=request,
-        name="statistics.html",
+        name="stat.html",
         context={
             "estatisticas": estatisticas,
             "top_produtos": top_produtos,
@@ -195,7 +179,6 @@ def product(
         if not produto:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
 
-        loja = session.get(Loja, produto.loja_id) if produto.loja_id else None
         avaliacoes = session.exec(
             select(Avaliacao).where(Avaliacao.produto_id == produto_id)
         ).all()
@@ -205,7 +188,6 @@ def product(
         name="product.html",
         context={
             "produto": produto,
-            "loja": loja if loja else {"nome": "", "nota": 0},
             "avaliacoes": avaliacoes,
         },
     )
