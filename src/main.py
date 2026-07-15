@@ -1,11 +1,11 @@
 # imports necessários para o funcionamento do projeto
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response, Form
-from fastapi.responses import HTMLResponse, Response
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
-from models import Vendedor, Cliente, Produto, Reserva, Avaliacao
+from models import Vendedor, Cliente, Loja, Produto, Reserva, Avaliacao
 
 # setup do Fastapi
 app = FastAPI()
@@ -32,14 +32,16 @@ def on_startup() -> None:
 async def root(request: Request):
     return templates.TemplateResponse(request=request, name="createAccount.html")
 
+
 # rota para login
 @app.get("/paginalogin", response_class=HTMLResponse)
 async def paginalogin(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
+
 # rota para criação de usuários no database
 @app.post("/criarusuario")
-async def criar_usuario(user : Vendedor):
+async def criar_usuario(user: Vendedor):
     with Session(engine) as session:
         busca = session.exec(select(Vendedor).where(Vendedor.nome == user.nome)).first()
         if busca:
@@ -50,7 +52,7 @@ async def criar_usuario(user : Vendedor):
         session.refresh(user)
 
     return {"usuario": user.nome}
-        
+
 
 # rota para login com usuário e senha
 @app.post("/login")
@@ -58,42 +60,155 @@ def logar(nome: str, senha: str, response: Response):
     with Session(engine) as session:
         user = select(Vendedor).where(Vendedor.nome == nome)
         usuario_encontrado = session.exec(user).first()
-        
         if not usuario_encontrado:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        
         if usuario_encontrado.senha != senha:
             raise HTTPException(status_code=404, detail="Senha incorreta")
-        
         response.set_cookie(key="session_user", value=nome)
-        return {"message": "Logado com sucesso"}
+    return {"message": "Logado com sucesso"}
 
 
 # função auxiliar que captura o usuário logado no cookie
 def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
-
     if not session_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Acesso negado: você não está logado."
+            detail="Acesso negado: você não está logado.",
         )
 
     with Session(engine) as session:
         busca = select(Vendedor).where(Vendedor.nome == session_user)
         user = session.exec(busca).first()
 
-        if not user:
-            raise HTTPException(status_code=401, detail="Sessão inválida")
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessão inválida")
 
-        return user
+    return user
+
+
+# função auxiliar que busca a loja do vendedor logado
+def get_loja_do_usuario(user: Vendedor, session: Session) -> Loja | None:
+    return session.exec(select(Loja).where(Loja.vendedor_id == user.id)).first()
+
 
 # rota para o acesso à home do lojista
 @app.get("/home")
 def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
+    return templates.TemplateResponse(request=request, name="homeOwner.html")
+
+
+# rota de estoque do dono da loja
+@app.get("/stock")
+def stock(request: Request, user: Vendedor = Depends(get_active_user)):
+    with Session(engine) as session:
+        loja = get_loja_do_usuario(user, session)
+        produtos = (
+            session.exec(select(Produto).where(Produto.loja_id == loja.id)).all()
+            if loja
+            else []
+        )
+
+    return templates.TemplateResponse(
+        request=request, name="stock.html", context={"produtos": produtos}
+    )
+
+
+# rota de estatísticas do dono da loja
+@app.get("/statistics")
+def statistics(request: Request, user: Vendedor = Depends(get_active_user)):
+    estatisticas = {"receita_mensal": 0, "vendas_mes": 0, "nota_media": 0}
+    top_produtos = []
+    avaliacoes_recentes = []
+
+    with Session(engine) as session:
+        loja = get_loja_do_usuario(user, session)
+
+        if loja:
+            produtos = session.exec(
+                select(Produto).where(Produto.loja_id == loja.id)
+            ).all()
+            produto_ids = [p.id for p in produtos]
+
+            reservas = session.exec(
+                select(Reserva).where(Reserva.loja_id == loja.id)
+            ).all()
+            estatisticas["vendas_mes"] = len(reservas)
+
+            produtos_por_id = {p.id: p for p in produtos}
+            estatisticas["receita_mensal"] = sum(
+                produtos_por_id[r.produto_id].preco
+                for r in reservas
+                if r.produto_id in produtos_por_id
+            )
+
+            vendas_por_produto: dict[int, int] = {}
+            for r in reservas:
+                if r.produto_id is not None:
+                    vendas_por_produto[r.produto_id] = (
+                        vendas_por_produto.get(r.produto_id, 0) + 1
+                    )
+
+            top_produtos = sorted(
+                (
+                    {"nome": p.nome, "vendas": vendas_por_produto.get(p.id, 0)}
+                    for p in produtos
+                ),
+                key=lambda item: item["vendas"],
+                reverse=True,
+            )[:5]
+
+            avaliacoes = (
+                session.exec(
+                    select(Avaliacao).where(Avaliacao.produto_id.in_(produto_ids))
+                ).all()
+                if produto_ids
+                else []
+            )
+
+            if avaliacoes:
+                estatisticas["nota_media"] = round(
+                    sum(a.nota for a in avaliacoes) / len(avaliacoes), 1
+                )
+
+            avaliacoes_recentes = sorted(
+                avaliacoes, key=lambda a: (a.dia, a.horario), reverse=True
+            )[:5]
+
     return templates.TemplateResponse(
         request=request,
-        name="homeOwner.html"
-    ) 
+        name="statistics.html",
+        context={
+            "estatisticas": estatisticas,
+            "top_produtos": top_produtos,
+            "avaliacoes_recentes": avaliacoes_recentes,
+        },
+    )
+
+
+# rota de visualização de um produto
+@app.get("/product/{produto_id}")
+def product(
+    request: Request, produto_id: int, user: Vendedor = Depends(get_active_user)
+):
+    with Session(engine) as session:
+        produto = session.get(Produto, produto_id)
+        if not produto:
+            raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+        loja = session.get(Loja, produto.loja_id) if produto.loja_id else None
+        avaliacoes = session.exec(
+            select(Avaliacao).where(Avaliacao.produto_id == produto_id)
+        ).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="product.html",
+        context={
+            "produto": produto,
+            "loja": loja if loja else {"nome": "", "nota": 0},
+            "avaliacoes": avaliacoes,
+        },
+    )
 
 
 # rota auxiliar para visualizar os usuários criados

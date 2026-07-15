@@ -1,91 +1,91 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ produto.nome }}</title>
-    <link rel="stylesheet" href="../static/homeStyle.css">
-    <link rel="stylesheet" href="../static/dashboardStyle.css">
-    <link rel="stylesheet" href="../static/productStyle.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{ produto.nome }}</title>
+<link rel="stylesheet" href="../static/homeStyle.css">
+<link rel="stylesheet" href="../static/dashboardStyle.css">
+<link rel="stylesheet" href="../static/productStyle.css">
 </head>
 <body>
 
-    <header class="product-topbar">
-        <a href="/stock" class="back-link">Estoque</a>
-    </header>
+<header class="product-topbar">
+<a href="/stock" class="back-link">Estoque</a>
+</header>
 
-    <main class="product-page">
-        <div class="breadcrumb">
-            <a href="/homeOwner">Home</a> / <a href="/stock">Estoque</a> / <span>{{ produto.nome }}</span>
-        </div>
+<main class="product-page">
+<div class="breadcrumb">
+<a href="/home">Home</a> / <a href="/stock">Estoque</a> / <span>{{ produto.nome }}</span>
+</div>
 
-        <section class="product-detail">
-            <div class="product-detail-image">
-                <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
-            </div>
+<section class="product-detail">
+<div class="product-detail-image">
+<img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
+</div>
 
-            <div class="product-detail-info">
-                <h1>{{ produto.nome }}</h1>
-                <p class="loja-link">{{ loja.nome }} · ★ {{ loja.nota }}</p>
+<div class="product-detail-info">
+<h1>{{ produto.nome }}</h1>
+<p class="loja-link">{{ loja.nome }} · ★ {{ loja.nota }}</p>
 
-                <p class="product-detail-price">${{ produto.preco }}</p>
+<p class="product-detail-price">${{ produto.preco }}</p>
 
                 {% if produto.quantidade_em_estoque > 0 %}
-                <p class="stock-info in-stock">Disponível ({{ produto.quantidade_em_estoque }} {{ produto.unidade_medida }})</p>
+<p class="stock-info in-stock">Disponível ({{ produto.quantidade_em_estoque }} {{ produto.unidade_medida }})</p>
                 {% else %}
-                <p class="stock-info out-of-stock">Fora de estoque</p>
+<p class="stock-info out-of-stock">Fora de estoque</p>
                 {% endif %}
 
-                <div class="owner-actions">
-                    <button
-                        type="button"
-                        id="edit-product-btn"
-                        class="primary-btn"
-                        data-id="{{ produto.id }}"
-                        data-nome="{{ produto.nome }}"
-                        data-quantidade="{{ produto.quantidade_em_estoque }}"
-                        data-preco="{{ produto.preco }}"
-                    >
+<div class="owner-actions">
+<button
+type="button"
+id="edit-product-btn"
+class="primary-btn"
+data-id="{{ produto.id }}"
+data-nome="{{ produto.nome }}"
+data-quantidade="{{ produto.quantidade_em_estoque }}"
+data-preco="{{ produto.preco }}"
+>
                         Editar Produto
-                    </button>
-                    <button type="button" id="delete-product-btn" class="secondary-btn danger-btn-solid" data-id="{{ produto.id }}">
+</button>
+<button type="button" id="delete-product-btn" class="secondary-btn danger-btn-solid" data-id="{{ produto.id }}">
                         Remover Produto
-                    </button>
-                </div>
-            </div>
-        </section>
+</button>
+</div>
+</div>
+</section>
 
-        <section class="reviews-section">
-            <h2>Avaliações</h2>
-            <!-- BACKEND LOOP (Jinja2) -->
+<section class="reviews-section">
+<h2>Avaliações</h2>
+<!-- BACKEND LOOP (Jinja2) -->
             {% for avaliacao in avaliacoes %}
-            <div class="review-card">
-                <div class="review-header">
-                    <span class="review-stars">{{ "★" * avaliacao.nota }}{{ "☆" * (5 - avaliacao.nota) }}</span>
-                    <span class="review-date">{{ avaliacao.dia }}/{{ avaliacao.horario }}</span>
-                </div>
-                <p class="review-text">{{ avaliacao.texto }}</p>
-            </div>
+<div class="review-card">
+<div class="review-header">
+<span class="review-stars">{{ "★" * avaliacao.nota }}{{ "☆" * (5 - avaliacao.nota) }}</span>
+<span class="review-date">{{ avaliacao.dia }}/{{ avaliacao.horario }}</span>
+</div>
+<p class="review-text">{{ avaliacao.texto }}</p>
+</div>
             {% else %}
-            <p class="empty-message">Ainda não há avaliações para este produto.</p>
+<p class="empty-message">Ainda não há avaliações para este produto.</p>
             {% endfor %}
-        </section>
-    </main>
+</section>
+</main>
 
-    <div id="product-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Editar Produto</h2>
-            <input type="hidden" id="modal-produto-id">
-            <input type="text" id="modal-nome" placeholder="Nome do produto">
-            <input type="number" id="modal-quantidade" placeholder="Quantity in stock" min="0">
-            <input type="number" id="modal-preco" placeholder="Price" min="0" step="0.01">
-            <div class="modal-actions">
-                <button type="button" id="modal-cancel" class="secondary-btn">Cancel</button>
-                <button type="button" id="modal-save" class="primary-btn">Save</button>
-            </div>
-        </div>
-    </div>
+<div id="product-modal" class="modal hidden">
+<div class="modal-content">
+<h2>Editar Produto</h2>
+<input type="hidden" id="modal-produto-id">
+<input type="text" id="modal-nome" placeholder="Nome do produto">
+<input type="number" id="modal-quantidade" placeholder="Quantidade em estoque" min="0">
+<input type="number" id="modal-preco" placeholder="Preço" min="0" step="0.01">
+<div class="modal-actions">
+<button type="button" id="modal-cancel" class="secondary-btn">Cancelar</button>
+<button type="button" id="modal-save" class="primary-btn">Salvar</button>
+</div>
+</div>
+</div>
 
-    <script src="../static/productScript.js"></script>
+<script src="../static/productScript.js"></script>
 </body>
 </html>

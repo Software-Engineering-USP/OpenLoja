@@ -30,18 +30,23 @@ async function criarconta() {
   if (resposta.ok) {
     const resultado = await resposta.json();
     alert("Usuário " + resultado.usuario + " criado!");
+    window.location.href = "/paginalogin";
   } else {
     alert("Usuário já existente, tente outro!");
   }
 }
 
 async function login() {
-  const usuario = document.getElementById("usuario").value;
+  const nome = document.getElementById("usuario").value;
   const senha = document.getElementById("senha").value;
 
-  const resposta = await fetch("/login?nome=" + usuario + "&senha=" + senha, {
-    method: "POST",
-  });
+  const resposta = await fetch(
+    "/login?nome=" +
+      encodeURIComponent(nome) +
+      "&senha=" +
+      encodeURIComponent(senha),
+    { method: "POST" },
+  );
 
   if (resposta.ok) {
     window.location.href = "/home";
