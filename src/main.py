@@ -32,10 +32,12 @@ def on_startup() -> None:
 async def root(request: Request):
     return templates.TemplateResponse(request=request, name="createAccount.html")
 
+
 # rota para login
 @app.get("/paginalogin", response_class=HTMLResponse)
 async def paginalogin(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
+
 
 # rota para criação de usuários no database
 @app.post("/criarusuario")
@@ -87,6 +89,7 @@ def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
 
         return user
 
+
 # rota para o acesso à home do lojista
 @app.get("/home")
 def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
@@ -107,3 +110,66 @@ def visualizar_db():
             "reservas": session.exec(select(Reserva)).all(),
             "avaliacoes": session.exec(select(Avaliacao)).all(),
         }
+
+# rota para adição/criação de produtos no db
+@app.post("/produtos")
+def criar_produto(produto: Produto):
+    with Session(engine) as session:
+        session.add(produto)
+        session.commit()
+        session.refresh(produto)
+        return produto
+    
+
+# rota para listar todos produtos do db
+@app.get("/produtos")
+def listar_produtos():
+    with Session(engine) as session:
+        return session.exec(select(Produto)).all()
+    
+
+# rota para buscar por produto especificado pelo ID
+@app.get("/produtos/{produto_id}")
+def buscar_produto(produto_id: int):
+    with Session(engine) as session:
+        produto = session.get(Produto, produto_id)
+
+        if produto is None:
+            raise HTTPException(404, "Produto não encontrado")
+
+        return produto 
+
+
+# rota para modificação de produto especificado por ID
+@app.put("/produtos/{produto_id}")
+def atualizar_produto(produto_id: int, dados: Produto):
+    with Session(engine) as session:
+        produto = session.get(Produto, produto_id)
+
+        if produto is None:
+            raise HTTPException(404, "Produto não encontrado")
+
+        produto.sqlmodel_update(dados.model_dump(exclude_unset=True))
+
+        session.add(produto)
+        session.commit()
+        session.refresh(produto)
+
+        return produto
+    
+
+# rota para deleção de produtos no db
+@app.delete("/produtos/{produto_id}")
+def deletar_produto(produto_id: int):
+    with Session(engine) as session:
+        produto = session.get(Produto, produto_id)
+
+        if produto is None:
+            raise HTTPException(404, "Produto não encontrado")
+
+        session.delete(produto)
+        session.commit()
+
+        return {"message": "Produto removido"}
+
+
