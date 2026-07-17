@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Statistics</title>
+    <title>Estatísticas</title>
     <link rel="stylesheet" href="../static/homeStyle.css">
     <link rel="stylesheet" href="../static/dashboardStyle.css">
 </head>
@@ -13,59 +13,57 @@
             <div class="brand">
                 <div class="brand-icon">S</div>
                 <div class="brand-info">
-                    <h1>Statistics</h1>
-                    <p>Monthly performance overview for your shop.</p>
+                    <h1>Estatísticas</h1>
+                    <p>Visão geral do desempenho mensal para sua loja</p>
                 </div>
             </div>
             <nav class="action-buttons">
                 <a href="/home">Home</a>
-                <a href="/stock">Stock</a>
-                <a href="/orders">Orders</a>
-                <a href="/settings">Settings</a>
+                <a href="/stock">Estoque</a>
+                <a href="/orders">Pedidos</a>
+                <a href="/settings">Configurações</a>
             </nav>
         </header>
 
         <div class="dashboard-grid">
             <div class="card">
-                <h2>Monthly Revenue</h2>
+                <h2>Receita Mensal</h2>
                 <div class="value">${{ estatisticas.receita_mensal }}</div>
-                <small>Revenue generated this month</small>
             </div>
             <div class="card">
-                <h2>Sales This Month</h2>
+                <h2>Vendas este mês</h2>
                 <div class="value">{{ estatisticas.vendas_mes }}</div>
-                <small>Total reservations completed</small>
-            </div>
+                </div>
             <div class="card">
-                <h2>Average Rating</h2>
+                <h2>Avaliação Média</h2>
                 <div class="value">{{ estatisticas.nota_media }}</div>
-                <small>Average across all products</small>
+                <small>Média entre todos os produtos</small>
             </div>
         </div>
 
         <div class="stats-panel two-col">
             <div class="panel">
-                <h2>Revenue Over Time</h2>
+                <h2>Receita ao Longo do Tempo</h2>
                 <canvas id="revenue-chart" height="220"></canvas>
             </div>
 
             <div class="panel">
-                <h2>Top Selling Products</h2>
+                <h2>Produtos Mais Vendidos</h2>
                 <!-- BACKEND LOOP (Jinja2) -->
                 {% for produto in top_produtos %}
                 <div class="stat-row">
                     <span>{{ produto.nome }}</span>
-                    <span>{{ produto.vendas }} sold</span>
+                    <span>{{ produto.vendas }} vendidos</span>
                 </div>
                 {% else %}
-                <p class="empty-row">No sales data yet.</p>
+                <p class="empty-row">Sem dados de vendas ainda.</p>
                 {% endfor %}
             </div>
         </div>
 
         <div class="stats-panel">
             <div class="panel">
-                <h2>Recent Reviews</h2>
+                <h2>Avaliações Recentes</h2>
                 <!-- BACKEND LOOP (Jinja2) -->
                 {% for avaliacao in avaliacoes_recentes %}
                 <div class="stat-row review-row">
@@ -73,7 +71,7 @@
                     <span class="review-texto">{{ avaliacao.texto }}</span>
                 </div>
                 {% else %}
-                <p class="empty-row">No reviews yet.</p>
+                <p class="empty-row">Sem avaliações ainda.</p>
                 {% endfor %}
             </div>
         </div>
