@@ -15,6 +15,9 @@ class Cliente(SQLModel, table=True):
     reservas: List["Reserva"] = Relationship(back_populates="cliente")
     avaliacoes: List["Avaliacao"] = Relationship(back_populates="cliente")
 
+class Usuario(SQLModel):
+    nome: str
+    senha: str
 
 class Produto(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
