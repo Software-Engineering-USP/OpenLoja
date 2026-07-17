@@ -15,7 +15,7 @@ form {
     justify-content: center;
     background-color: #fff;
     width: 40vw;
-    height: 80vh;
+    min-height: 80vh;
     border-radius: 50px;
     color:  #1d4ed8;
     box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
@@ -37,7 +37,7 @@ form {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 40px;
+    padding: 20px;
 }
 
 div {

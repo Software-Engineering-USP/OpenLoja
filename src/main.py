@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
-from models import Vendedor, Cliente, Produto, Reserva, Avaliacao
+from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario
 
 # setup do Fastapi
 app = FastAPI()
@@ -30,7 +30,16 @@ def on_startup() -> None:
 # rota inicial para criação de contas
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse(request=request, name="createAccount.html")
+    with Session(engine) as session:
+        existeVendedor = session.exec(select(Vendedor)).first() is None
+
+    return templates.TemplateResponse(
+        request=request,
+        name="createAccount.html",
+        context={
+            "primeiroVendedor": existeVendedor
+        }
+    )
 
 
 # rota para login
@@ -41,35 +50,68 @@ async def paginalogin(request: Request):
 
 # rota para criação de usuários no database
 @app.post("/criarusuario")
-async def criar_usuario(user: Vendedor):
+async def criar_usuario(user: Usuario):
     with Session(engine) as session:
-        busca = session.exec(select(Vendedor).where(Vendedor.nome == user.nome)).first()
-        if busca:
-            raise HTTPException(status_code=404, detail="Usuário já existente.")
 
-        session.add(user)
+        existeVendedor = session.exec(select(Vendedor)).first()
+
+        if existeVendedor:
+
+            vendedor = session.exec(select(Vendedor).where(Vendedor.nome == user.nome)).first()
+            cliente = session.exec(select(Cliente).where(Cliente.nome == user.nome)).first()
+            
+            if vendedor or cliente:
+                raise HTTPException(status_code=404, detail="Usuário já existente.")
+            
+            usuario = Cliente(nome = user.nome, senha = user.senha)
+        
+        else:
+            usuario = Vendedor(nome = user.nome, senha = user.senha)
+        
+
+        session.add(usuario)
         session.commit()
-        session.refresh(user)
+        session.refresh(usuario)
 
-    return {"usuario": user.nome}
+    return {"usuario": usuario.nome}
 
 
-# rota para login com usuário e senha
+# rota para logar com o usuário e setar o cookie
 @app.post("/login")
 def logar(nome: str, senha: str, response: Response):
+
     with Session(engine) as session:
-        user = select(Vendedor).where(Vendedor.nome == nome)
-        usuario_encontrado = session.exec(user).first()
-        if not usuario_encontrado:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        if usuario_encontrado.senha != senha:
-            raise HTTPException(status_code=404, detail="Senha incorreta")
-        response.set_cookie(key="session_user", value=nome)
-    return {"message": "Logado com sucesso"}
+
+        vendedor = session.exec(select(Vendedor).where(Vendedor.nome == nome)).first()
+
+        if vendedor:
+            print("Entrou como vendedor")
+            if vendedor.senha != senha:
+                raise HTTPException(404, "Senha incorreta")
+
+            response.set_cookie("session_user", nome)
+            response.set_cookie("tipo", "vendedor")
+
+            return {"message": "Logado", "tipo": "vendedor"}
+
+        cliente = session.exec(select(Cliente).where(Cliente.nome == nome)).first()
+
+        if cliente:
+            print("Entrou como cliente")
+            if cliente.senha != senha:
+                raise HTTPException(404, "Senha incorreta")
+
+            response.set_cookie("session_user", nome)
+            response.set_cookie("tipo", "cliente")
+
+            return {"message": "Logado", "tipo": "cliente"}
+
+        raise HTTPException(404, "Usuário não encontrado")
+
 
 
 # função auxiliar que captura o usuário logado no cookie
-def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
+def get_active_user(session_user: Annotated[str | None, Cookie()] = None, tipo: Annotated[str | None, Cookie()] = None):
     if not session_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -77,8 +119,12 @@ def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
         )
 
     with Session(engine) as session:
-        busca = select(Vendedor).where(Vendedor.nome == session_user)
-        user = session.exec(busca).first()
+        if tipo == "vendedor":
+            user = session.exec(select(Vendedor).where(Vendedor.nome == session_user)).first()
+        elif tipo == "cliente":
+            user = session.exec(select(Cliente).where(Cliente.nome == session_user)).first()
+        else:
+            raise HTTPException(401, "Tipo de usuário inválido.")
 
     if not user:
         raise HTTPException(status_code=401, detail="Sessão inválida")
@@ -92,6 +138,10 @@ def get_active_user(session_user: Annotated[str | None, Cookie()] = None):
 def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
     return templates.TemplateResponse(request=request, name="homeOwner.html")
 
+# rota para o acesso à home do cliente
+@app.get("/homeCliente")
+def home_cliente(request: Request, user: Cliente = Depends(get_active_user)):
+    return templates.TemplateResponse(request=request, name="frontpage.html")
 
 # rota de estoque do dono da loja
 @app.get("/stock")

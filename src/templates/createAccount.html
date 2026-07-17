@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenLoja</title>
-  <link rel="stylesheet" href="/static/login.css">
+  <link rel="stylesheet" href="/static/login.css?v=999">
 
 </head>
 <body>
@@ -12,7 +12,13 @@
 
     <div id="title">
       <img src="/static/icone.png" id="icone"> </img>
-      <h1>Crie sua Conta</h1>
+      {% if primeiroVendedor %}
+      <h1>Bem-vindo!</h1>
+      <h2>Você será o administrador da loja!</h2>
+      {% else %}
+      <h1>Crie sua conta de Cliente!</h1>
+      {% endif %}
+
     </div>
 
     <div>

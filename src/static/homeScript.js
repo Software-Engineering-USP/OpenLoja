@@ -49,7 +49,13 @@ async function login() {
   );
 
   if (resposta.ok) {
-    window.location.href = "/home";
+    const data = await resposta.json();
+      
+    if (data.tipo === "vendedor") {
+      window.location.href = "/home";
+    } else {
+      window.location.href = "/homeCliente";
+    }
   } else {
     alert("Usuário ou senha incorretos.");
   }
