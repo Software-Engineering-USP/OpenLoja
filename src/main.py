@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
 from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario
+from datetime import datetime
 
 # setup do Fastapi
 app = FastAPI()
@@ -36,9 +37,7 @@ async def root(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="createAccount.html",
-        context={
-            "primeiroVendedor": existeVendedor
-        }
+        context={"primeiroVendedor": existeVendedor},
     )
 
 
@@ -52,22 +51,23 @@ async def paginalogin(request: Request):
 @app.post("/criarusuario")
 async def criar_usuario(user: Usuario):
     with Session(engine) as session:
-
         existeVendedor = session.exec(select(Vendedor)).first()
 
         if existeVendedor:
+            vendedor = session.exec(
+                select(Vendedor).where(Vendedor.nome == user.nome)
+            ).first()
+            cliente = session.exec(
+                select(Cliente).where(Cliente.nome == user.nome)
+            ).first()
 
-            vendedor = session.exec(select(Vendedor).where(Vendedor.nome == user.nome)).first()
-            cliente = session.exec(select(Cliente).where(Cliente.nome == user.nome)).first()
-            
             if vendedor or cliente:
                 raise HTTPException(status_code=404, detail="Usuário já existente.")
-            
-            usuario = Cliente(nome = user.nome, senha = user.senha)
-        
+
+            usuario = Cliente(nome=user.nome, senha=user.senha)
+
         else:
-            usuario = Vendedor(nome = user.nome, senha = user.senha)
-        
+            usuario = Vendedor(nome=user.nome, senha=user.senha)
 
         session.add(usuario)
         session.commit()
@@ -79,9 +79,7 @@ async def criar_usuario(user: Usuario):
 # rota para logar com o usuário e setar o cookie
 @app.post("/login")
 def logar(nome: str, senha: str, response: Response):
-
     with Session(engine) as session:
-
         vendedor = session.exec(select(Vendedor).where(Vendedor.nome == nome)).first()
 
         if vendedor:
@@ -109,9 +107,11 @@ def logar(nome: str, senha: str, response: Response):
         raise HTTPException(404, "Usuário não encontrado")
 
 
-
 # função auxiliar que captura o usuário logado no cookie
-def get_active_user(session_user: Annotated[str | None, Cookie()] = None, tipo: Annotated[str | None, Cookie()] = None):
+def get_active_user(
+    session_user: Annotated[str | None, Cookie()] = None,
+    tipo: Annotated[str | None, Cookie()] = None,
+):
     if not session_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -120,9 +120,13 @@ def get_active_user(session_user: Annotated[str | None, Cookie()] = None, tipo: 
 
     with Session(engine) as session:
         if tipo == "vendedor":
-            user = session.exec(select(Vendedor).where(Vendedor.nome == session_user)).first()
+            user = session.exec(
+                select(Vendedor).where(Vendedor.nome == session_user)
+            ).first()
         elif tipo == "cliente":
-            user = session.exec(select(Cliente).where(Cliente.nome == session_user)).first()
+            user = session.exec(
+                select(Cliente).where(Cliente.nome == session_user)
+            ).first()
         else:
             raise HTTPException(401, "Tipo de usuário inválido.")
 
@@ -132,16 +136,17 @@ def get_active_user(session_user: Annotated[str | None, Cookie()] = None, tipo: 
     return user
 
 
-
 # rota para o acesso à home do lojista
 @app.get("/home")
 def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
     return templates.TemplateResponse(request=request, name="homeOwner.html")
 
+
 # rota para o acesso à home do cliente
 @app.get("/homeCliente")
 def home_cliente(request: Request, user: Cliente = Depends(get_active_user)):
     return templates.TemplateResponse(request=request, name="frontpage.html")
+
 
 # rota de estoque do dono da loja
 @app.get("/stock")
@@ -256,6 +261,7 @@ def visualizar_db():
             "avaliacoes": session.exec(select(Avaliacao)).all(),
         }
 
+
 # rota para adição/criação de produtos no db
 @app.post("/produtos")
 def criar_produto(produto: Produto):
@@ -264,14 +270,14 @@ def criar_produto(produto: Produto):
         session.commit()
         session.refresh(produto)
         return produto
-    
+
 
 # rota para listar todos produtos do db
 @app.get("/produtos")
 def listar_produtos():
     with Session(engine) as session:
         return session.exec(select(Produto)).all()
-    
+
 
 # rota para buscar por produto especificado pelo ID
 @app.get("/produtos/{produto_id}")
@@ -282,7 +288,7 @@ def buscar_produto(produto_id: int):
         if produto is None:
             raise HTTPException(404, "Produto não encontrado")
 
-        return produto 
+        return produto
 
 
 # rota para modificação de produto especificado por ID
@@ -301,7 +307,7 @@ def atualizar_produto(produto_id: int, dados: Produto):
         session.refresh(produto)
 
         return produto
-    
+
 
 # rota para deleção de produtos no db
 @app.delete("/produtos/{produto_id}")
@@ -318,3 +324,24 @@ def deletar_produto(produto_id: int):
         return {"message": "Produto removido"}
 
 
+# rota para concluir uma reserva
+@app.put("/reservas/{reserva_id}/completar")
+def concluir_reserva(reserva_id: int):
+    with Session(engine) as session:
+        reserva = session.get(Reserva, reserva_id)
+
+        if reserva is None:
+            raise HTTPException(404, "Reserva não encontrada")
+
+        if reserva.concluida:
+            raise HTTPException(400, "Reserva já está concluída")
+
+        reserva.concluida = True
+        reserva.valor_efetivo = reserva.valor
+        reserva.data_conclusao = datetime.now()
+
+        session.add(reserva)
+        session.commit()
+        session.refresh(reserva)
+
+        return reserva
