@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shop's Frontpage</title>
-    <!-- CDN Correta do Font Awesome para os ícones funcionarem -->
-    <link rel="stylesheet" href="https://cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="../static/frontpage.css">
+    <link rel="stylesheet" href="../static/modal.css">
 </head>
 <body>
 
@@ -28,16 +28,25 @@
             </ul>
 
             <!-- Shop Icons / Utilities -->
-            <div class="header-icons">
-                <a href="#account" title="Conta"><i class="far fa-user"></i></a>
-                <a href="#wishlist" title="Lista de desejos" class="icon-badge-container">
+            <div class="header-actions">
+
+                <button id="open-login" class="login-btn">
+                    <i class="far fa-user"></i>
+                    <span>Entrar</span>
+                </button>
+
+                <a href="#wishlist" class="header-action">
                     <i class="far fa-heart"></i>
+                    <span>Favoritos</span>
                     <span class="badge">0</span>
                 </a>
-                <a href="#cart" title="Carrinho" class="icon-badge-container">
-                    <i class="fas fa-shopping-bag"></i>
+
+                <a href="#cart" class="header-action">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Carrinho</span>
                     <span class="badge">3</span>
                 </a>
+
             </div>
 
             <div class="logo">
@@ -63,7 +72,6 @@
             <!-- Grid de Produtos Dinâmico -->
             <div class="product-grid" id="product-grid">
 
-                <!-- LOOP DO BACKEND (Exemplo em Jinja2/Python. Ajuste a sintaxe conforme sua tecnologia) -->
                 {% for produto in produtos %}
                 <article class="product-card" data-tags="{{ produto.tag }}">
                     <a href="/product/{{ produto.id }}" class="product-image">
@@ -83,12 +91,206 @@
 
             </div>
 
-            <!-- Mensagem caso nenhum item seja encontrado após o filtro JS -->
-            <div id="no-results" class="hidden-message">Nenhum produto encontrado para a sua busca.</div>
+            <div id="no-results" class="hidden-message">
+                Nenhum produto encontrado para a sua busca.
+            </div>
         </section>
     </main>
 
-    <!-- Script de Filtro Integrado -->
+    <!-- ==================== MODAL LOGIN/CADASTRO ==================== -->
+
+    <div id="auth-modal" class="modal-overlay">
+
+        <div class="modal">
+
+            <button
+                class="close-btn"
+                id="close-modal"
+                aria-label="Fechar janela">
+                &times;
+            </button>
+
+            <!-- Login -->
+            <div id="login-form">
+
+                <h2>Entrar</h2>
+
+                <form action="/login" method="POST">
+
+                    <label for="login-nome" class="sr-only">
+                        Nome de usuário
+                    </label>
+
+                    <input
+                        id="login-nome"
+                        type="text"
+                        name="nome"
+                        placeholder="Nome de usuário"
+                        required>
+
+                    <label for="login-senha" class="sr-only">
+                        Senha
+                    </label>
+
+                    <input
+                        id="login-senha"
+                        type="password"
+                        name="senha"
+                        placeholder="Senha"
+                        required>
+
+                    <button type="submit">
+                        Entrar
+                    </button>
+
+                </form>
+
+                <p>
+                    Não possui conta?
+                    <a href="#" id="show-register">
+                        Cadastre-se
+                    </a>
+                </p>
+
+            </div>
+
+            <!-- Cadastro -->
+            <div id="register-form" style="display:none;">
+
+                <h2>Criar Conta</h2>
+
+                <form action="/criarusuario" method="POST">
+
+                    <label for="register-nome" class="sr-only">
+                        Nome de usuário
+                    </label>
+
+                    <input
+                        id="register-nome"
+                        type="text"
+                        name="nome"
+                        placeholder="Nome de usuário"
+                        required>
+
+                    <label for="register-senha" class="sr-only">
+                        Senha
+                    </label>
+
+                    <input
+                        id="register-senha"
+                        type="password"
+                        name="senha"
+                        placeholder="Senha"
+                        required>
+
+                    <button type="submit">
+                        Criar Conta
+                    </button>
+
+                </form>
+
+                <p>
+                    Já possui conta?
+                    <a href="#" id="show-login">
+                        Entrar
+                    </a>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ==================== MODAL CARRINHO ==================== -->
+
+    <div id="cart-sidebar-overlay" class="sidebar-overlay">
+
+        <aside id="cart-sidebar" class="cart-sidebar">
+
+            <div class="cart-header">
+
+                <h2>Meu Carrinho</h2>
+
+                <button
+                    id="close-cart"
+                    aria-label="Fechar carrinho">
+                    &times;
+                </button>
+
+            </div>
+
+            <div class="cart-items">
+
+                <div class="cart-item">
+
+                    <img src="produto.jpg" alt="Camiseta">
+
+                    <div class="cart-info">
+
+                        <h4>Camiseta</h4>
+
+                        <span>R$ 89,90</span>
+
+                    </div>
+
+                    <button
+                        class="remove-item"
+                        aria-label="Remover Camiseta do carrinho">
+
+                        <i class="fas fa-trash"></i>
+
+                    </button>
+
+                </div>
+
+                <div class="cart-item">
+
+                    <img src="produto2.jpg" alt="Tênis">
+
+                    <div class="cart-info">
+
+                        <h4>Tênis</h4>
+
+                        <span>R$ 259,90</span>
+
+                    </div>
+
+                    <button
+                        class="remove-item"
+                        aria-label="Remover Tênis do carrinho">
+
+                        <i class="fas fa-trash"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="cart-footer">
+
+                <div class="cart-total">
+
+                    <span>Total</span>
+
+                    <strong>R$349,80</strong>
+
+                </div>
+
+                <button class="checkout-btn">
+
+                    Finalizar Compra
+
+                </button>
+
+            </div>
+
+        </aside>
+
+    </div>
+
     <script src="../static/frontpage.js"></script>
+    <script src="../static/modal.js"></script>
 </body>
 </html>
