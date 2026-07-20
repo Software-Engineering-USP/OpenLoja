@@ -103,7 +103,12 @@
 
         <div class="modal">
 
-            <button class="close-btn" id="close-modal">&times;</button>
+            <button
+                class="close-btn"
+                id="close-modal"
+                aria-label="Fechar janela">
+                &times;
+            </button>
 
             <!-- Login -->
             <div id="login-form">
@@ -111,24 +116,40 @@
                 <h2>Entrar</h2>
 
                 <form action="/login" method="POST">
+
+                    <label for="login-nome" class="sr-only">
+                        Nome de usuário
+                    </label>
+
                     <input
+                        id="login-nome"
                         type="text"
                         name="nome"
                         placeholder="Nome de usuário"
                         required>
 
+                    <label for="login-senha" class="sr-only">
+                        Senha
+                    </label>
+
                     <input
+                        id="login-senha"
                         type="password"
                         name="senha"
                         placeholder="Senha"
                         required>
 
-                    <button type="submit">Entrar</button>
+                    <button type="submit">
+                        Entrar
+                    </button>
+
                 </form>
 
                 <p>
                     Não possui conta?
-                    <a href="#" id="show-register">Cadastre-se</a>
+                    <a href="#" id="show-register">
+                        Cadastre-se
+                    </a>
                 </p>
 
             </div>
@@ -140,13 +161,23 @@
 
                 <form action="/criarusuario" method="POST">
 
+                    <label for="register-nome" class="sr-only">
+                        Nome de usuário
+                    </label>
+
                     <input
+                        id="register-nome"
                         type="text"
                         name="nome"
                         placeholder="Nome de usuário"
                         required>
 
+                    <label for="register-senha" class="sr-only">
+                        Senha
+                    </label>
+
                     <input
+                        id="register-senha"
                         type="password"
                         name="senha"
                         placeholder="Senha"
@@ -160,7 +191,9 @@
 
                 <p>
                     Já possui conta?
-                    <a href="#" id="show-login">Entrar</a>
+                    <a href="#" id="show-login">
+                        Entrar
+                    </a>
                 </p>
 
             </div>
@@ -169,7 +202,6 @@
 
     </div>
 
-    
     <!-- ==================== MODAL CARRINHO ==================== -->
 
     <div id="cart-sidebar-overlay" class="sidebar-overlay">
@@ -180,16 +212,19 @@
 
                 <h2>Meu Carrinho</h2>
 
-                <button id="close-cart">&times;</button>
+                <button
+                    id="close-cart"
+                    aria-label="Fechar carrinho">
+                    &times;
+                </button>
 
             </div>
 
             <div class="cart-items">
 
-                <!-- Exemplo -->
                 <div class="cart-item">
 
-                    <img src="produto.jpg" alt="Produto">
+                    <img src="produto.jpg" alt="Camiseta">
 
                     <div class="cart-info">
 
@@ -199,15 +234,19 @@
 
                     </div>
 
-                    <button class="remove-item">
+                    <button
+                        class="remove-item"
+                        aria-label="Remover Camiseta do carrinho">
+
                         <i class="fas fa-trash"></i>
+
                     </button>
 
                 </div>
 
                 <div class="cart-item">
 
-                    <img src="produto2.jpg">
+                    <img src="produto2.jpg" alt="Tênis">
 
                     <div class="cart-info">
 
@@ -217,8 +256,12 @@
 
                     </div>
 
-                    <button class="remove-item">
+                    <button
+                        class="remove-item"
+                        aria-label="Remover Tênis do carrinho">
+
                         <i class="fas fa-trash"></i>
+
                     </button>
 
                 </div>
@@ -246,8 +289,6 @@
         </aside>
 
     </div>
-
-    <!-- ============================================================= -->
 
     <script src="../static/frontpage.js"></script>
     <script src="../static/modal.js"></script>
