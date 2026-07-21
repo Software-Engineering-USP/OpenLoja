@@ -27,17 +27,60 @@ def create_db():
 def on_startup() -> None:
     create_db()
 
+# função auxiliar que captura o usuário logado no cookie
+def get_active_user(
+    session_user: Annotated[str | None, Cookie()] = None,
+    tipo: Annotated[str | None, Cookie()] = None
+):
+    if not session_user:
+        return None
 
-# rota inicial para criação de contas
-@app.get("/")
-async def root(request: Request):
     with Session(engine) as session:
-        existeVendedor = session.exec(select(Vendedor)).first() is None
+        if tipo == "vendedor":
+            user = session.exec(
+                select(Vendedor).where(Vendedor.nome == session_user)
+            ).first()
+        elif tipo == "cliente":
+            user = session.exec(
+                select(Cliente).where(Cliente.nome == session_user)
+            ).first()
 
+    if not user:
+        return None
+
+    return user
+
+# função auxiliar que captura o TIPO do usuário logado no cookie
+def get_active_type(tipo: Annotated[str | None, Cookie()] = None):
+    if not tipo:
+        return None
+
+    return tipo
+
+
+# rota inicial para acesso a criação da conta admin ou acesso
+@app.get("/")
+async def root(request: Request, user: Cliente = Depends(get_active_user), tipo: str = Depends(get_active_type)):
+    with Session(engine) as session:
+        ExisteVendedor = session.exec(select(Vendedor)).first() is not None
+        
+    if ExisteVendedor:
+        if tipo == "vendedor":
+            return templates.TemplateResponse(
+                request=request,
+                name="homeOwner.html"
+            )
+        
+        return templates.TemplateResponse(
+            request=request,
+            name="frontpage.html",
+            context={"usuario": user}
+        )
+    
     return templates.TemplateResponse(
         request=request,
         name="createAccount.html",
-        context={"primeiroVendedor": existeVendedor},
+        context={"primeiroVendedor": not ExisteVendedor},
     )
 
 
@@ -45,6 +88,14 @@ async def root(request: Request):
 @app.get("/paginalogin", response_class=HTMLResponse)
 async def paginalogin(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
+
+@app.get("/paginacria", response_class=HTMLResponse)
+async def paginacriar(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="createAccount.html",
+        context={"primeiroVendedor": False},
+    )
 
 
 # rota para criação de usuários no database
@@ -83,7 +134,6 @@ def logar(nome: str, senha: str, response: Response):
         vendedor = session.exec(select(Vendedor).where(Vendedor.nome == nome)).first()
 
         if vendedor:
-            print("Entrou como vendedor")
             if vendedor.senha != senha:
                 raise HTTPException(404, "Senha incorreta")
 
@@ -95,7 +145,6 @@ def logar(nome: str, senha: str, response: Response):
         cliente = session.exec(select(Cliente).where(Cliente.nome == nome)).first()
 
         if cliente:
-            print("Entrou como cliente")
             if cliente.senha != senha:
                 raise HTTPException(404, "Senha incorreta")
 
@@ -105,47 +154,6 @@ def logar(nome: str, senha: str, response: Response):
             return {"message": "Logado", "tipo": "cliente"}
 
         raise HTTPException(404, "Usuário não encontrado")
-
-
-# função auxiliar que captura o usuário logado no cookie
-def get_active_user(
-    session_user: Annotated[str | None, Cookie()] = None,
-    tipo: Annotated[str | None, Cookie()] = None,
-):
-    if not session_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Acesso negado: você não está logado.",
-        )
-
-    with Session(engine) as session:
-        if tipo == "vendedor":
-            user = session.exec(
-                select(Vendedor).where(Vendedor.nome == session_user)
-            ).first()
-        elif tipo == "cliente":
-            user = session.exec(
-                select(Cliente).where(Cliente.nome == session_user)
-            ).first()
-        else:
-            raise HTTPException(401, "Tipo de usuário inválido.")
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Sessão inválida")
-
-    return user
-
-
-# rota para o acesso à home do lojista
-@app.get("/home")
-def show_profile(request: Request, user: Vendedor = Depends(get_active_user)):
-    return templates.TemplateResponse(request=request, name="homeOwner.html")
-
-
-# rota para o acesso à home do cliente
-@app.get("/homeCliente")
-def home_cliente(request: Request, user: Cliente = Depends(get_active_user)):
-    return templates.TemplateResponse(request=request, name="frontpage.html")
 
 
 # rota de estoque do dono da loja
