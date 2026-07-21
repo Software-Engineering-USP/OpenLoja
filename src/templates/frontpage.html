@@ -29,23 +29,28 @@
 
             <!-- Shop Icons / Utilities -->
             <div class="header-actions">
+	      
+              <button id="open-login" class="login-btn" onclick="pagina_login()">
+                <i class="far fa-user"></i>
+		{% if usuario %}
+		<span> {{ usuario.nome }} </span>
+		{% else %}
+                <span>Entrar</span>
+		{% endif %}
+              </button>
+	      
 
-                <button id="open-login" class="login-btn">
-                    <i class="far fa-user"></i>
-                    <span>Entrar</span>
-                </button>
+              <a href="#wishlist" class="header-action">
+                <i class="far fa-heart"></i>
+                <span>Favoritos</span>
+                <span class="badge">0</span>
+              </a>
 
-                <a href="#wishlist" class="header-action">
-                    <i class="far fa-heart"></i>
-                    <span>Favoritos</span>
-                    <span class="badge">0</span>
-                </a>
-
-                <a href="#cart" class="header-action">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Carrinho</span>
-                    <span class="badge">3</span>
-                </a>
+              <a href="#cart" class="header-action">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Carrinho</span>
+                <span class="badge">3</span>
+              </a>
 
             </div>
 
@@ -97,110 +102,8 @@
         </section>
     </main>
 
-    <!-- ==================== MODAL LOGIN/CADASTRO ==================== -->
 
-    <div id="auth-modal" class="modal-overlay">
-
-        <div class="modal">
-
-            <button
-                class="close-btn"
-                id="close-modal"
-                aria-label="Fechar janela">
-                &times;
-            </button>
-
-            <!-- Login -->
-            <div id="login-form">
-
-                <h2>Entrar</h2>
-
-                <form action="/login" method="POST">
-
-                    <label for="login-nome" class="sr-only">
-                        Nome de usuário
-                    </label>
-
-                    <input
-                        id="login-nome"
-                        type="text"
-                        name="nome"
-                        placeholder="Nome de usuário"
-                        required>
-
-                    <label for="login-senha" class="sr-only">
-                        Senha
-                    </label>
-
-                    <input
-                        id="login-senha"
-                        type="password"
-                        name="senha"
-                        placeholder="Senha"
-                        required>
-
-                    <button type="submit">
-                        Entrar
-                    </button>
-
-                </form>
-
-                <p>
-                    Não possui conta?
-                    <a href="#" id="show-register">
-                        Cadastre-se
-                    </a>
-                </p>
-
-            </div>
-
-            <!-- Cadastro -->
-            <div id="register-form" style="display:none;">
-
-                <h2>Criar Conta</h2>
-
-                <form action="/criarusuario" method="POST">
-
-                    <label for="register-nome" class="sr-only">
-                        Nome de usuário
-                    </label>
-
-                    <input
-                        id="register-nome"
-                        type="text"
-                        name="nome"
-                        placeholder="Nome de usuário"
-                        required>
-
-                    <label for="register-senha" class="sr-only">
-                        Senha
-                    </label>
-
-                    <input
-                        id="register-senha"
-                        type="password"
-                        name="senha"
-                        placeholder="Senha"
-                        required>
-
-                    <button type="submit">
-                        Criar Conta
-                    </button>
-
-                </form>
-
-                <p>
-                    Já possui conta?
-                    <a href="#" id="show-login">
-                        Entrar
-                    </a>
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
+    
 
     <!-- ==================== MODAL CARRINHO ==================== -->
 
@@ -290,7 +193,7 @@
 
     </div>
 
-    <script src="../static/frontpage.js"></script>
-    <script src="../static/modal.js"></script>
+    <script src="/static/frontpage.js"></script>
+    <script src="/static/modal.js"></script>
 </body>
 </html>

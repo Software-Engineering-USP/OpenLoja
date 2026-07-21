@@ -1,5 +1,5 @@
 function pagina_criarconta() {
-    window.location.href = "/";
+    window.location.href = "/paginacria";
 }
 
 function pagina_login() {
@@ -55,12 +55,7 @@ async function login() {
 
     if (resposta.ok) {
 	const data = await resposta.json();
-	
-	if (data.tipo === "vendedor") {
-	    window.location.href = "/home";
-	} else {
-	    window.location.href = "/homeCliente";
-	}
+	window.location.href = "/"
     } else {
 	alert("Usuário ou senha incorretos.");
     }
