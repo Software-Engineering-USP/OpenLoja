@@ -440,19 +440,36 @@ def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
         return reserva
 
 
+# Helpers para rotas de carrinho
+def _get_or_create_carrinho(session: Session, cliente_id: int) -> Carrinho:
+    carrinho = session.exec(select(Carrinho).where(Carrinho.cliente_id == cliente_id)).first()
+    if not carrinho:
+        carrinho = Carrinho(cliente_id=cliente_id)
+        session.add(carrinho)
+        session.commit()
+        session.refresh(carrinho)
+    return carrinho
+
+def _get_carrinho_or_404(session: Session, cliente_id: int) -> Carrinho:
+    carrinho = session.exec(select(Carrinho).where(Carrinho.cliente_id == cliente_id)).first()
+    if not carrinho:
+        raise HTTPException(status_code=404, detail="Carrinho não encontrado")
+    return carrinho
+
+def _get_carrinho_produto_link(session: Session, carrinho_id: int, produto_id: int) -> CarrinhoProdutoLink | None:
+    return session.exec(
+        select(CarrinhoProdutoLink).where(
+            (CarrinhoProdutoLink.carrinho_id == carrinho_id)
+            & (CarrinhoProdutoLink.produto_id == produto_id)
+        )
+    ).first()
+
+
 # rota para criar ou obter o carrinho de um cliente
 @app.get("/carrinho/{cliente_id}")
 def get_carrinho(cliente_id: int, user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
     with Session(engine) as session:
-        carrinho = session.exec(
-            select(Carrinho).where(Carrinho.cliente_id == cliente_id)
-        ).first()
-        if not carrinho:
-            carrinho = Carrinho(cliente_id=cliente_id)
-            session.add(carrinho)
-            session.commit()
-            session.refresh(carrinho)
-            return {"id": carrinho.id, "cliente_id": carrinho.cliente_id, "itens": []}
+        carrinho = _get_or_create_carrinho(session, cliente_id)
 
         resultados = (
             select(Produto, CarrinhoProdutoLink.quantidade)
@@ -484,21 +501,9 @@ def add_produto(
     quantidade: int = 1,
 ):
     with Session(engine) as session:
-        carrinho = session.exec(
-            select(Carrinho).where(Carrinho.cliente_id == cliente_id)
-        ).first()
-        if not carrinho:
-            carrinho = Carrinho(cliente_id=cliente_id)
-            session.add(carrinho)
-            session.commit()
-            session.refresh(carrinho)
+        carrinho = _get_or_create_carrinho(session, cliente_id)
     
-        link = session.exec(
-            select(CarrinhoProdutoLink).where(
-                (CarrinhoProdutoLink.carrinho_id == carrinho.id)
-                & (CarrinhoProdutoLink.produto_id == produto_id)
-            )
-        ).first()
+        link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if link:
             link.quantidade += quantidade
         else:
@@ -519,18 +524,9 @@ def update_item(
     user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
 ):
     with Session(engine) as session:
-        carrinho = session.exec(
-            select(Carrinho).where(Carrinho.cliente_id == cliente_id)
-        ).first()
-        if not carrinho:
-            raise HTTPException(status_code=404, detail="Carrinho não encontrado")
+        carrinho = _get_carrinho_or_404(session, cliente_id)
     
-        link = session.exec(
-            select(CarrinhoProdutoLink).where(
-                (CarrinhoProdutoLink.carrinho_id == carrinho.id)
-                & (CarrinhoProdutoLink.produto_id == produto_id)
-            )
-        ).first()
+        link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if not link:
             raise HTTPException(status_code=404, detail="Item não está no carrinho")
     
@@ -551,18 +547,9 @@ def remove_item(
     user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
 ):
     with Session(engine) as session:
-        carrinho = session.exec(
-            select(Carrinho).where(Carrinho.cliente_id == cliente_id)
-        ).first()
-        if not carrinho:
-            raise HTTPException(status_code=404, detail="Carrinho não encontrado")
+        carrinho = _get_carrinho_or_404(session, cliente_id)
     
-        link = session.exec(
-            select(CarrinhoProdutoLink).where(
-                (CarrinhoProdutoLink.carrinho_id == carrinho.id)
-                & (CarrinhoProdutoLink.produto_id == produto_id)
-            )
-        ).first()
+        link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if link:
             session.delete(link)
             session.commit()
