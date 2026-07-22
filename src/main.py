@@ -81,7 +81,7 @@ def get_active_user(
 
     return user
 
-def get_admin(user=Depends(get_active_user)):
+def get_admin(user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
     if not isinstance(user, Vendedor):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -442,7 +442,7 @@ def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
 
 # rota para criar ou obter o carrinho de um cliente
 @app.get("/carrinho/{cliente_id}")
-def get_carrinho(cliente_id: int, user=Depends(get_active_user)):
+def get_carrinho(cliente_id: int, user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
     with Session(engine) as session:
         carrinho = session.exec(
             select(Carrinho).where(Carrinho.cliente_id == cliente_id)
@@ -478,10 +478,10 @@ def get_carrinho(cliente_id: int, user=Depends(get_active_user)):
 # rota para adicionar um produto ao carrinho
 @app.post("/carrinho/{cliente_id}/add")
 def add_produto(
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
     cliente_id: int,
     produto_id: int,
     quantidade: int = 1,
-    user=Depends(get_active_user),
 ):
     with Session(engine) as session:
         carrinho = session.exec(
@@ -511,12 +511,12 @@ def add_produto(
 
 
 # rota para alterar a quantidade de um produto no carrinho
-@app.patch("/carrinho/{cliente_id}/item")
+@app.patch("/carrinho/{cliente_id}/item", responses={404: {"description": "Carrinho ou item não encontrado"}})
 def update_item(
     cliente_id: int,
     produto_id: int,
     nova_quantidade: int,
-    user=Depends(get_active_user),
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
 ):
     with Session(engine) as session:
         carrinho = session.exec(
@@ -544,11 +544,11 @@ def update_item(
 
 
 # rota para remover um produto do carrinho
-@app.delete("/carrinho/{cliente_id}/item/{produto_id}")
+@app.delete("/carrinho/{cliente_id}/item/{produto_id}", responses={404: {"description": "Carrinho ou item não encontrado"}})
 def remove_item(
     cliente_id: int,
     produto_id: int,
-    user=Depends(get_active_user),
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
 ):
     with Session(engine) as session:
         carrinho = session.exec(
