@@ -17,7 +17,7 @@
                 </div>
             </div>
             <nav class="action-buttons">
-                <a href="/homeOwner">Home</a>
+                <a href="/home">Home</a>
                 <a href="/statistics">Estatísticas</a>
                 <a href="/orders">Pedidos</a>
                 <a href="/settings">Configurações</a>
@@ -60,7 +60,7 @@
                         </td>
                         <td class="actions-cell">
                             <a href="/product/{{ produto.id }}" class="icon-btn" title="View">Ver</a>
-                            <button type="button" class="icon-btn edit-btn" data-id="{{ produto.id }}" title="Edit">EEditar</button>
+                            <button type="button" class="icon-btn edit-btn" data-id="{{ produto.id }}" title="Edit">Editar</button>
                             <button type="button" class="icon-btn danger-btn delete-btn" data-id="{{ produto.id }}" title="Delete">Deletar</button>
                         </td>
                     </tr>
@@ -82,6 +82,19 @@
             <input type="text" id="modal-nome" placeholder="Nome do produto">
             <input type="number" id="modal-quantidade" placeholder="Quantidade em estoque" min="0">
             <input type="number" id="modal-preco" placeholder="Preço" min="0" step="0.01">
+            <input
+                type="file"
+                id="modal-imagem"
+                accept="image/*"
+            >
+
+            <img
+                id="modal-preview"
+                class="image-preview"
+                src=""
+                alt="Pré-visualização"
+                style="display:none;"
+            >
             <div class="modal-actions">
                 <button type="button" id="modal-cancel" class="secondary-btn">Cancelar</button>
                 <button type="button" id="modal-save" class="primary-btn">Salvar</button>

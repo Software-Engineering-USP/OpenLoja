@@ -16,14 +16,22 @@ const modalId = document.getElementById("modal-produto-id");
 const modalNome = document.getElementById("modal-nome");
 const modalQuantidade = document.getElementById("modal-quantidade");
 const modalPreco = document.getElementById("modal-preco");
+const inputImagem = document.getElementById("modal-imagem");
+const preview = document.getElementById("modal-preview");
 
 function abrirModal({ id = "", nome = "", quantidade = "", preco = "" } = {}) {
-  modalTitle.textContent = id ? "Edit Product" : "Add Product";
-  modalId.value = id;
-  modalNome.value = nome;
-  modalQuantidade.value = quantidade;
-  modalPreco.value = preco;
-  modal.classList.remove("hidden");
+    modalTitle.textContent = id ? "Editar Produto" : "Adicionar Produto";
+
+    modalId.value = id;
+    modalNome.value = nome;
+    modalQuantidade.value = quantidade;
+    modalPreco.value = preco;
+
+    inputImagem.value = "";
+    preview.style.display = "none";
+    preview.src = "";
+
+    modal.classList.remove("hidden");
 }
 
 function fecharModal() {
@@ -48,25 +56,56 @@ document.querySelectorAll(".edit-btn").forEach((btn) => {
 });
 
 document.getElementById("modal-save").addEventListener("click", async () => {
-  const dados = {
-    id: modalId.value || null,
-    nome: modalNome.value,
-    quantidade_em_estoque: Number(modalQuantidade.value),
-    preco: Number(modalPreco.value),
-  };
+    const dados = {
+        nome: modalNome.value,
+        quantidade_em_estoque: Number(modalQuantidade.value),
+        preco: Number(modalPreco.value),
+    };
 
-  // ATUALIZAR COM A ROTA DE CRIAR/EDITAR PRODUTO
-  const resposta = await fetch(dados.id ? `/ROTA/${dados.id}` : "/ROTA", {
-    method: dados.id ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dados),
-  });
+    const resposta = await fetch(
+        modalId.value ? `/produtos/${modalId.value}` : "/produtos",
+        {
+            method: modalId.value ? "PUT" : "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dados)
+        }
+    );
 
-  if (resposta.ok) {
+    if (!resposta.ok) {
+        alert("Erro ao salvar o produto.");
+        return;
+    }
+
+    const produto = await resposta.json();
+
+    
+    const id = modalId.value || produto.id;
+
+    if (inputImagem.files.length > 0) {
+        const imagemData = new FormData();
+        imagemData.append("imagem", inputImagem.files[0]);
+
+        await fetch(`/produtos/${id}/imagem`, {
+            method: "POST",
+            body: imagemData,
+        });
+    }
+
     window.location.reload();
-  } else {
-    alert("Erro ao salvar o produto.");
-  }
+});
+
+inputImagem.addEventListener("change", () => {
+    const arquivo = inputImagem.files[0];
+
+    if (!arquivo) {
+        preview.style.display = "none";
+        return;
+    }
+
+    preview.src = URL.createObjectURL(arquivo);
+    preview.style.display = "block";
 });
 
 // ---- Deletar produto ----
@@ -75,7 +114,7 @@ document.querySelectorAll(".delete-btn").forEach((btn) => {
     if (!confirm("Tem certeza que deseja remover este produto?")) return;
 
     // ATUALIZAR COM A ROTA DE DELETAR PRODUTO
-    const resposta = await fetch(`/ROTA/${btn.dataset.id}`, {
+    const resposta = await fetch(`/produtos/${btn.dataset.id}`, {
       method: "DELETE",
     });
 

@@ -357,7 +357,7 @@ def buscar_produto(produto_id: int):
 
 # rota para modificação de produto especificado por ID
 @app.put("/produtos/{produto_id}")
-def atualizar_produto(produto_id: int,dados: Produto, admin: Vendedor = Depends(get_admin)):
+def atualizar_produto(produto_id: int, dados: Produto, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
@@ -371,6 +371,33 @@ def atualizar_produto(produto_id: int,dados: Produto, admin: Vendedor = Depends(
         session.refresh(produto)
 
         return produto
+
+
+@app.post("/produtos/{produto_id}/imagem")
+async def enviar_imagem(
+    produto_id: int,
+    imagem: UploadFile = File(...),
+    admin: Vendedor = Depends(get_admin)
+):
+    with Session(engine) as session:
+        produto = session.get(Produto, produto_id)
+
+        if produto is None:
+            raise HTTPException(404, "Produto não encontrado")
+
+        os.makedirs("static/images", exist_ok=True)
+
+        caminho = f"images/{produto_id}_{imagem.filename}"
+
+        with open(f"static/{caminho}", "wb") as buffer:
+            shutil.copyfileobj(imagem.file, buffer)
+
+        produto.imagem = caminho
+
+        session.add(produto)
+        session.commit()
+
+    return {"ok": True}
 
 
 # rota para deleção de produtos no db
