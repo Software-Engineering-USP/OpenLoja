@@ -1,12 +1,13 @@
 # imports necessários para o funcionamento do projeto
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
 from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario
 from datetime import datetime
+
 
 # setup do Fastapi
 app = FastAPI()
@@ -79,7 +80,7 @@ def get_active_user(
 
     return user
 
-def get_admin(user: Vendedor = Depends(get_active_user)):
+def get_admin(user=Depends(get_active_user)):
     if not isinstance(user, Vendedor):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -100,31 +101,22 @@ def get_active_type(tipo: Annotated[str | None, Cookie()] = None):
 @app.get("/")
 async def root(
     request: Request,
-    user: Cliente | Vendedor | None = Depends(get_optional_user),
     tipo: str | None = Depends(get_active_type),
 ):
     with Session(engine) as session:
-        ExisteVendedor = session.exec(select(Vendedor)).first() is not None
-        
-    if ExisteVendedor:
-        if tipo == "vendedor":
-            return templates.TemplateResponse(
-                request=request,
-                name="homeOwner.html"
-            )
-        
+        existe_vendedor = session.exec(select(Vendedor)).first() is not None
+
+    if not existe_vendedor:
         return templates.TemplateResponse(
             request=request,
-            name="frontpage.html",
-            context={"usuario": user}
+            name="createAccount.html",
+            context={"primeiroVendedor": True},
         )
-    
-    return templates.TemplateResponse(
-        request=request,
-        name="createAccount.html",
-        context={"primeiroVendedor": not ExisteVendedor},
-    )
 
+    if tipo == "vendedor":
+        return RedirectResponse(url="/home", status_code=303)
+
+    return RedirectResponse(url="/homeCliente", status_code=303)
 
 # rota para login
 @app.get("/paginalogin", response_class=HTMLResponse)
@@ -206,8 +198,15 @@ def show_profile(request: Request, admin: Vendedor = Depends(get_admin)):
 
 # rota para o acesso à home do cliente
 @app.get("/homeCliente")
-def home_cliente(request: Request, user: Cliente = Depends(get_active_user)):
-    return templates.TemplateResponse(request=request, name="frontpage.html")
+def home_cliente(
+    request: Request,
+    user: Cliente | Vendedor | None = Depends(get_optional_user),
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="frontpage.html",
+        context={"usuario": user},
+    )
 
 
 # rota de estoque do dono da loja
@@ -290,7 +289,11 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
 
 # rota de visualização de um produto
 @app.get("/product/{produto_id}")
-def product(request: Request, produto_id: int, user: Vendedor = Depends(get_active_user)):
+def product(
+    request: Request,
+    produto_id: int,
+    user: Cliente | Vendedor | None = Depends(get_optional_user),
+):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
         if not produto:
