@@ -1,5 +1,5 @@
 # imports necessários para o funcionamento do projeto
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response , UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -7,7 +7,8 @@ from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
 from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario
 from datetime import datetime
-
+import os
+import shutil
 
 # setup do Fastapi
 app = FastAPI()
@@ -357,7 +358,7 @@ def buscar_produto(produto_id: int):
 
 # rota para modificação de produto especificado por ID
 @app.put("/produtos/{produto_id}")
-def atualizar_produto(produto_id: int,dados: Produto, admin: Vendedor = Depends(get_admin)):
+def atualizar_produto(produto_id: int, dados: Produto, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
@@ -371,6 +372,34 @@ def atualizar_produto(produto_id: int,dados: Produto, admin: Vendedor = Depends(
         session.refresh(produto)
 
         return produto
+
+
+@app.post("/produtos/{produto_id}/imagem",responses={404: {"description": "Produto não encontrado"}})
+def enviar_imagem(
+    produto_id: int,
+    imagem: UploadFile = File(...),
+    admin: Vendedor = Depends(get_admin)
+):
+    with Session(engine) as session:
+        produto = session.get(Produto, produto_id)
+
+        if produto is None:
+            raise HTTPException(404, "Produto não encontrado")
+
+        os.makedirs("static/images", exist_ok=True)
+
+        nome_imagem = os.path.basename(imagem.filename)
+        caminho = f"images/{produto_id}_{nome_imagem}"
+
+        with open(f"static/{caminho}", "wb") as buffer:
+            shutil.copyfileobj(imagem.file, buffer)
+
+        produto.imagem = caminho
+
+        session.add(produto)
+        session.commit()
+
+    return {"ok": True}
 
 
 # rota para deleção de produtos no db
