@@ -388,7 +388,8 @@ def enviar_imagem(
 
         os.makedirs("static/images", exist_ok=True)
 
-        caminho = f"images/{produto_id}_{imagem.filename}"
+        nome_imagem = os.path.basename(imagem.filename)
+        caminho = f"images/{produto_id}_{nome_imagem}"
 
         with open(f"static/{caminho}", "wb") as buffer:
             shutil.copyfileobj(imagem.file, buffer)
