@@ -55,8 +55,7 @@ document.getElementById("modal-save").addEventListener("click", async () => {
     preco: Number(modalPreco.value),
   };
 
-  // ATUALIZAR COM A ROTA DE CRIAR/EDITAR PRODUTO
-  const resposta = await fetch(dados.id ? `/ROTA/${dados.id}` : "/ROTA", {
+  const resposta = await fetch(dados.id ? `/produtos/${dados.id}` : "/produtos", {
     method: dados.id ? "PUT" : "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dados),
@@ -74,8 +73,7 @@ document.querySelectorAll(".delete-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
     if (!confirm("Tem certeza que deseja remover este produto?")) return;
 
-    // ATUALIZAR COM A ROTA DE DELETAR PRODUTO
-    const resposta = await fetch(`/ROTA/${btn.dataset.id}`, {
+    const resposta = await fetch(`/produtos/${btn.dataset.id}`, {
       method: "DELETE",
     });
 
