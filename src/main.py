@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
-from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario
+from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario, Carrinho, CarrinhoProdutoLink
 from datetime import datetime
 import os
 import shutil
@@ -81,7 +81,7 @@ def get_active_user(
 
     return user
 
-def get_admin(user=Depends(get_active_user)):
+def get_admin(user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
     if not isinstance(user, Vendedor):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -438,3 +438,120 @@ def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
         session.refresh(reserva)
 
         return reserva
+
+
+# Helpers para rotas de carrinho
+def _get_or_create_carrinho(session: Session, cliente_id: int) -> Carrinho:
+    carrinho = session.exec(select(Carrinho).where(Carrinho.cliente_id == cliente_id)).first()
+    if not carrinho:
+        carrinho = Carrinho(cliente_id=cliente_id)
+        session.add(carrinho)
+        session.commit()
+        session.refresh(carrinho)
+    return carrinho
+
+def _get_carrinho_or_404(session: Session, cliente_id: int) -> Carrinho:
+    carrinho = session.exec(select(Carrinho).where(Carrinho.cliente_id == cliente_id)).first()
+    if not carrinho:
+        raise HTTPException(status_code=404, detail="Carrinho não encontrado")
+    return carrinho
+
+def _get_carrinho_produto_link(session: Session, carrinho_id: int, produto_id: int) -> CarrinhoProdutoLink | None:
+    return session.exec(
+        select(CarrinhoProdutoLink).where(
+            (CarrinhoProdutoLink.carrinho_id == carrinho_id)
+            & (CarrinhoProdutoLink.produto_id == produto_id)
+        )
+    ).first()
+
+
+# rota para criar ou obter o carrinho de um cliente
+@app.get("/carrinho/{cliente_id}")
+def get_carrinho(cliente_id: int, user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
+    with Session(engine) as session:
+        carrinho = _get_or_create_carrinho(session, cliente_id)
+
+        resultados = (
+            select(Produto, CarrinhoProdutoLink.quantidade)
+            .join(CarrinhoProdutoLink, CarrinhoProdutoLink.produto_id == Produto.id)
+            .where(CarrinhoProdutoLink.carrinho_id == carrinho.id)
+        )
+        itens = session.exec(resultados).all()
+        
+        itens_formatados = []
+        for produto, quantidade in itens:
+            itens_formatados.append({
+                "produto": produto,
+                "quantidade": quantidade
+            })
+
+        return {
+            "id": carrinho.id,
+            "cliente_id": carrinho.cliente_id,
+            "itens": itens_formatados
+        }
+
+
+# rota para adicionar um produto ao carrinho
+@app.post("/carrinho/{cliente_id}/add")
+def add_produto(
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+    cliente_id: int,
+    produto_id: int,
+    quantidade: int = 1,
+):
+    with Session(engine) as session:
+        carrinho = _get_or_create_carrinho(session, cliente_id)
+    
+        link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
+        if link:
+            link.quantidade += quantidade
+        else:
+            link = CarrinhoProdutoLink(
+                carrinho_id=carrinho.id, produto_id=produto_id, quantidade=quantidade
+            )
+            session.add(link)
+        session.commit()
+        return {"msg": "produto adicionado", "carrinho_id": carrinho.id}
+
+
+# rota para alterar a quantidade de um produto no carrinho
+@app.patch("/carrinho/{cliente_id}/item", responses={404: {"description": "Carrinho ou item não encontrado"}})
+def update_item(
+    cliente_id: int,
+    produto_id: int,
+    nova_quantidade: int,
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+):
+    with Session(engine) as session:
+        carrinho = _get_carrinho_or_404(session, cliente_id)
+    
+        link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
+        if not link:
+            raise HTTPException(status_code=404, detail="Item não está no carrinho")
+    
+        if nova_quantidade <= 0:
+            session.delete(link)
+        else:
+            link.quantidade = nova_quantidade
+    
+        session.commit()
+        return {"msg": "quantidade atualizada"}
+
+
+# rota para remover um produto do carrinho
+@app.delete("/carrinho/{cliente_id}/item/{produto_id}", responses={404: {"description": "Carrinho ou item não encontrado"}})
+def remove_item(
+    cliente_id: int,
+    produto_id: int,
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+):
+    with Session(engine) as session:
+        carrinho = _get_carrinho_or_404(session, cliente_id)
+    
+        link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
+        if link:
+            session.delete(link)
+            session.commit()
+        return {"msg": "item removido"}
+
