@@ -43,6 +43,8 @@ class Produto(SQLModel, table=True):
     nome: str
     preco: int
 
+    imagem: str | None = Field(default=None)
+
     avaliacoes: List["Avaliacao"] = Relationship(back_populates="produto")
     reservas: List["Reserva"] = Relationship(
         back_populates="produtos", link_model=ReservaProdutoLink
