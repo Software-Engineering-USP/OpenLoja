@@ -27,8 +27,8 @@ def create_db():
 def on_startup() -> None:
     create_db()
 
-# função auxiliar que captura o usuário logado no cookie
-def get_active_user(
+# função auxiliar que retorna o usuário logado, se houver, sem exigir autenticação
+def get_optional_user(
     session_user: Annotated[str | None, Cookie()] = None,
     tipo: Annotated[str | None, Cookie()] = None
 ):
@@ -50,6 +50,44 @@ def get_active_user(
 
     return user
 
+
+# função auxiliar que captura o usuário logado no cookie
+def get_active_user(
+    session_user: Annotated[str | None, Cookie()] = None,
+    tipo: Annotated[str | None, Cookie()] = None,
+):
+    if not session_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Acesso negado: você não está logado.",
+        )
+
+    with Session(engine) as session:
+        if tipo == "vendedor":
+            user = session.exec(
+                select(Vendedor).where(Vendedor.nome == session_user)
+            ).first()
+        elif tipo == "cliente":
+            user = session.exec(
+                select(Cliente).where(Cliente.nome == session_user)
+            ).first()
+        else:
+            raise HTTPException(401, "Tipo de usuário inválido.")
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessão inválida")
+
+    return user
+
+def get_admin(user: Vendedor = Depends(get_active_user)):
+    if not isinstance(user, Vendedor):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas vendedores podem acessar esta rota.",
+        )
+
+    return user
+
 # função auxiliar que captura o TIPO do usuário logado no cookie
 def get_active_type(tipo: Annotated[str | None, Cookie()] = None):
     if not tipo:
@@ -60,7 +98,11 @@ def get_active_type(tipo: Annotated[str | None, Cookie()] = None):
 
 # rota inicial para acesso a criação da conta admin ou acesso
 @app.get("/")
-async def root(request: Request, user: Cliente = Depends(get_active_user), tipo: str = Depends(get_active_type)):
+async def root(
+    request: Request,
+    user: Cliente | Vendedor | None = Depends(get_optional_user),
+    tipo: str | None = Depends(get_active_type),
+):
     with Session(engine) as session:
         ExisteVendedor = session.exec(select(Vendedor)).first() is not None
         
@@ -156,71 +198,84 @@ def logar(nome: str, senha: str, response: Response):
         raise HTTPException(404, "Usuário não encontrado")
 
 
+# rota para o acesso à home do lojista
+@app.get("/home")
+def show_profile(request: Request, admin: Vendedor = Depends(get_admin)):
+    return templates.TemplateResponse(request=request, name="homeOwner.html")
+
+
+# rota para o acesso à home do cliente
+@app.get("/homeCliente")
+def home_cliente(request: Request, user: Cliente = Depends(get_active_user)):
+    return templates.TemplateResponse(request=request, name="frontpage.html")
+
+
 # rota de estoque do dono da loja
 @app.get("/stock")
-def stock(request: Request, user: Vendedor = Depends(get_active_user)):
+def stock(request: Request, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
-        produtos = session.exec(select(Produto)).all() if user else []
+        produtos = session.exec(select(Produto)).all()
 
     return templates.TemplateResponse(
-        request=request, name="stock.html", context={"produtos": produtos}
+        request=request,
+        name="stock.html",
+        context={"produtos": produtos},
     )
 
 
 # rota de estatísticas do dono da loja
 @app.get("/statistics")
-def statistics(request: Request, user: Vendedor = Depends(get_active_user)):
+def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
     estatisticas = {"receita_mensal": 0, "vendas_mes": 0, "nota_media": 0}
     top_produtos = []
     avaliacoes_recentes = []
 
     with Session(engine) as session:
-        if user:
-            produtos = session.exec(select(Produto)).all()
-            produto_ids = [p.id for p in produtos]
+        produtos = session.exec(select(Produto)).all()
+        produto_ids = [p.id for p in produtos]
 
-            reservas = session.exec(select(Reserva)).all()
-            estatisticas["vendas_mes"] = len(reservas)
+        reservas = session.exec(select(Reserva)).all()
+        estatisticas["vendas_mes"] = len(reservas)
 
-            produtos_por_id = {p.id: p for p in produtos}
-            estatisticas["receita_mensal"] = sum(
-                produtos_por_id[r.produto_id].preco
-                for r in reservas
-                if r.produto_id in produtos_por_id
-            )
+        produtos_por_id = {p.id: p for p in produtos}
+        estatisticas["receita_mensal"] = sum(
+            produtos_por_id[r.produto_id].preco
+            for r in reservas
+            if r.produto_id in produtos_por_id
+        )
 
-            vendas_por_produto: dict[int, int] = {}
-            for r in reservas:
-                if r.produto_id is not None:
-                    vendas_por_produto[r.produto_id] = (
-                        vendas_por_produto.get(r.produto_id, 0) + 1
-                    )
-
-            top_produtos = sorted(
-                (
-                    {"nome": p.nome, "vendas": vendas_por_produto.get(p.id, 0)}
-                    for p in produtos
-                ),
-                key=lambda item: item["vendas"],
-                reverse=True,
-            )[:5]
-
-            avaliacoes = (
-                session.exec(
-                    select(Avaliacao).where(Avaliacao.produto_id.in_(produto_ids))
-                ).all()
-                if produto_ids
-                else []
-            )
-
-            if avaliacoes:
-                estatisticas["nota_media"] = round(
-                    sum(a.nota for a in avaliacoes) / len(avaliacoes), 1
+        vendas_por_produto: dict[int, int] = {}
+        for r in reservas:
+            if r.produto_id is not None:
+                vendas_por_produto[r.produto_id] = (
+                    vendas_por_produto.get(r.produto_id, 0) + 1
                 )
 
-            avaliacoes_recentes = sorted(
-                avaliacoes, key=lambda a: (a.dia, a.horario), reverse=True
-            )[:5]
+        top_produtos = sorted(
+            (
+                {"nome": p.nome, "vendas": vendas_por_produto.get(p.id, 0)}
+                for p in produtos
+            ),
+            key=lambda item: item["vendas"],
+            reverse=True,
+        )[:5]
+
+        avaliacoes = (
+            session.exec(
+                select(Avaliacao).where(Avaliacao.produto_id.in_(produto_ids))
+            ).all()
+            if produto_ids
+            else []
+        )
+
+        if avaliacoes:
+            estatisticas["nota_media"] = round(
+                sum(a.nota for a in avaliacoes) / len(avaliacoes), 1
+            )
+
+        avaliacoes_recentes = sorted(
+            avaliacoes, key=lambda a: (a.dia, a.horario), reverse=True
+        )[:5]
 
     return templates.TemplateResponse(
         request=request,
@@ -235,9 +290,7 @@ def statistics(request: Request, user: Vendedor = Depends(get_active_user)):
 
 # rota de visualização de um produto
 @app.get("/product/{produto_id}")
-def product(
-    request: Request, produto_id: int, user: Vendedor = Depends(get_active_user)
-):
+def product(request: Request, produto_id: int, user: Vendedor = Depends(get_active_user)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
         if not produto:
@@ -259,7 +312,7 @@ def product(
 
 # rota auxiliar para visualizar os usuários criados
 @app.get("/db")
-def visualizar_db():
+def visualizar_db(admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         return {
             "clientes": session.exec(select(Cliente)).all(),
@@ -272,7 +325,7 @@ def visualizar_db():
 
 # rota para adição/criação de produtos no db
 @app.post("/produtos")
-def criar_produto(produto: Produto):
+def criar_produto(produto: Produto, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         session.add(produto)
         session.commit()
@@ -301,7 +354,7 @@ def buscar_produto(produto_id: int):
 
 # rota para modificação de produto especificado por ID
 @app.put("/produtos/{produto_id}")
-def atualizar_produto(produto_id: int, dados: Produto):
+def atualizar_produto(produto_id: int,dados: Produto, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
@@ -319,7 +372,7 @@ def atualizar_produto(produto_id: int, dados: Produto):
 
 # rota para deleção de produtos no db
 @app.delete("/produtos/{produto_id}")
-def deletar_produto(produto_id: int):
+def deletar_produto(produto_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
@@ -334,7 +387,7 @@ def deletar_produto(produto_id: int):
 
 # rota para concluir uma reserva
 @app.put("/reservas/{reserva_id}/completar")
-def concluir_reserva(reserva_id: int):
+def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         reserva = session.get(Reserva, reserva_id)
 
