@@ -466,10 +466,10 @@ def _get_carrinho_produto_link(session: Session, carrinho_id: int, produto_id: i
 
 
 # rota para criar ou obter o carrinho de um cliente
-@app.get("/carrinho/{cliente_id}")
-def get_carrinho(cliente_id: int, user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
+@app.get("/carrinho")
+def get_carrinho(user: Annotated[Cliente, Depends(get_active_user)]):
     with Session(engine) as session:
-        carrinho = _get_or_create_carrinho(session, cliente_id)
+        carrinho = _get_or_create_carrinho(session, user.id)
 
         resultados = (
             select(Produto, CarrinhoProdutoLink.quantidade)
@@ -477,31 +477,38 @@ def get_carrinho(cliente_id: int, user: Annotated[Cliente | Vendedor, Depends(ge
             .where(CarrinhoProdutoLink.carrinho_id == carrinho.id)
         )
         itens = session.exec(resultados).all()
-        
+
+        total = 0;
         itens_formatados = []
         for produto, quantidade in itens:
+
+            total += produto.preco
+            
             itens_formatados.append({
-                "produto": produto,
+                "id": produto.id,
+                "nome": produto.nome,
+                "preco": produto.preco,
+                "imagem": produto.imagem,
                 "quantidade": quantidade
             })
 
         return {
             "id": carrinho.id,
-            "cliente_id": carrinho.cliente_id,
-            "itens": itens_formatados
+            "cliente_id": user.id,
+            "itens": itens_formatados,
+            "total": total
         }
 
 
 # rota para adicionar um produto ao carrinho
-@app.post("/carrinho/{cliente_id}/add")
+@app.post("/carrinho/add")
 def add_produto(
-    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
-    cliente_id: int,
+    user: Annotated[Cliente, Depends(get_active_user)],
     produto_id: int,
     quantidade: int = 1,
 ):
     with Session(engine) as session:
-        carrinho = _get_or_create_carrinho(session, cliente_id)
+        carrinho = _get_or_create_carrinho(session, user.id)
     
         link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if link:
@@ -516,15 +523,14 @@ def add_produto(
 
 
 # rota para alterar a quantidade de um produto no carrinho
-@app.patch("/carrinho/{cliente_id}/item", responses={404: {"description": "Carrinho ou item não encontrado"}})
+@app.patch("/carrinho/item", responses={404: {"description": "Carrinho ou item não encontrado"}})
 def update_item(
-    cliente_id: int,
     produto_id: int,
     nova_quantidade: int,
-    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+    user: Annotated[Cliente, Depends(get_active_user)],
 ):
     with Session(engine) as session:
-        carrinho = _get_carrinho_or_404(session, cliente_id)
+        carrinho = _get_carrinho_or_404(session, user.id)
     
         link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if not link:
@@ -540,14 +546,13 @@ def update_item(
 
 
 # rota para remover um produto do carrinho
-@app.delete("/carrinho/{cliente_id}/item/{produto_id}", responses={404: {"description": "Carrinho ou item não encontrado"}})
+@app.delete("/carrinho/item/{produto_id}", responses={404: {"description": "Carrinho ou item não encontrado"}})
 def remove_item(
-    cliente_id: int,
     produto_id: int,
-    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+    user: Annotated[Cliente, Depends(get_active_user)],
 ):
     with Session(engine) as session:
-        carrinho = _get_carrinho_or_404(session, cliente_id)
+        carrinho = _get_carrinho_or_404(session, user.id)
     
         link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if link:
