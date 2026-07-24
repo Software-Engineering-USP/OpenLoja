@@ -5,6 +5,7 @@ from datetime import datetime
 CLIENTE_ID_FK = "cliente.id"
 PRODUTO_ID_FK = "produto.id"
 
+
 class Usuario(SQLModel):
     nome: str
     senha: str
@@ -64,11 +65,25 @@ class Reserva(SQLModel, table=True):
     valor_efetivo: float | None = Field(default=None)
     data_conclusao: datetime | None = Field(default=None)
 
-
     cliente: "Cliente" = Relationship(back_populates="reservas")
     produtos: List["Produto"] = Relationship(
         back_populates="reservas", link_model=ReservaProdutoLink
     )
+
+
+class ReservaItemInput(SQLModel):
+    produto_id: int
+    quantidade: int = 1
+
+
+class ReservaCreate(SQLModel):
+    cliente_id: int | None = None
+    itens: List[ReservaItemInput] = []
+
+
+class ReservaUpdate(SQLModel):
+    cliente_id: int | None = None
+    itens: List[ReservaItemInput] | None = None
 
 
 class Avaliacao(SQLModel, table=True):

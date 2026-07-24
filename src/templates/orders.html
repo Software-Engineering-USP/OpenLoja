@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedidos</title>
+    <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
+    <link rel="stylesheet" href="../static/ordersStyle.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div class="brand-info">
+                    <h1>Pedidos</h1>
+                </div>
+            </div>
+            <nav class="action-buttons">
+                <a href="/home">Home</a>
+                <a href="/stock">Estoque</a>
+                <a href="/statistics">Estatísticas</a>
+                <a href="/settings">Configurações</a>
+            </nav>
+        </header>
+
+        <div class="toolbar">
+            <input type="text" id="orders-search" placeholder="Buscar pedido por cliente...">
+            <button type="button" id="add-order-btn" class="primary-btn">+ Nova Reserva</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="orders-table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Produtos</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- BACKEND LOOP (Jinja2) -->
+                    {% for r in reservas %}
+                    <tr data-id="{{ r.id }}"
+                        data-cliente="{{ r.cliente_nome|lower }}"
+                        data-cliente-id="{{ r.cliente_id }}"
+                        data-itens='{{ r.itens_json }}'>
+                        <td class="product-cell">
+                            <span class="product-name">{{ r.cliente_nome }}</span>
+                        </td>
+                        <td>
+                            {% if r.itens %}
+                            {% for item in r.itens %}{{ item.nome }} ({{ item.quantidade }}x){% if not loop.last %}, {% endif %}{% endfor %}
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
+                        <td>R$ {{ "%.2f"|format(r.valor) }}</td>
+                        <td>
+                            {% if r.concluida %}
+                            <span class="tag tag-ok">Concluída</span>
+                            {% else %}
+                            <span class="tag tag-warning">Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            {% if not r.concluida %}
+                            <button type="button" class="icon-btn complete-btn" data-id="{{ r.id }}" title="Efetivar">Efetivar</button>
+                            <button type="button" class="icon-btn edit-btn" data-id="{{ r.id }}" title="Edit">Editar</button>
+                            {% endif %}
+                            <button type="button" class="icon-btn danger-btn delete-btn" data-id="{{ r.id }}" title="Delete">Deletar</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="empty-row">Nenhuma reserva registrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de adicionar/editar reserva -->
+    <div id="order-modal" class="modal hidden">
+        <div class="modal-content order-modal-content">
+            <h2 id="order-modal-title">Nova Reserva</h2>
+            <input type="hidden" id="modal-reserva-id">
+
+            <label for="modal-cliente">Cliente</label>
+            <select id="modal-cliente">
+                <option value="" disabled selected>Selecione um cliente</option>
+                {% for c in clientes %}
+                <option value="{{ c.id }}">{{ c.nome }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="modal-produto">Adicionar produto</label>
+            <div class="item-adder">
+                <select id="modal-produto">
+                    <option value="" disabled selected>Selecione um produto</option>
+                    {% for p in produtos %}
+                    <option value="{{ p.id }}" data-nome="{{ p.nome }}" data-preco="{{ p.preco }}">{{ p.nome }} — R$ {{ "%.2f"|format(p.preco) }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" id="modal-quantidade" min="1" value="1">
+                <button type="button" id="add-item-btn" class="icon-btn">Adicionar</button>
+            </div>
+
+            <div id="order-items-list" class="order-items-list">
+                <p class="empty-row" id="order-items-empty">Nenhum produto adicionado ainda.</p>
+            </div>
+
+            <div class="order-total-row">
+                <span>Total</span>
+                <strong id="order-total">R$ 0.00</strong>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="modal-cancel" class="secondary-btn">Cancelar</button>
+                <button type="button" id="modal-save" class="primary-btn">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/ordersScript.js"></script>
+</body>
+</html>
