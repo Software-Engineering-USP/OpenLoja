@@ -175,10 +175,30 @@ document.getElementById("modal-save").addEventListener("click", async () => {
 // ---- Efetivar reserva ----
 document.querySelectorAll(".complete-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
-    if (!confirm("Efetivar esta reserva?")) return;
+    const linha = btn.closest("tr");
+    const valorCheio = linha.dataset.valor;
+
+    const entrada = prompt(
+      `Valor efetivo da venda (deixe em branco para usar o valor cheio: R$ ${Number(valorCheio).toFixed(2)}):`,
+      "",
+    );
+
+    if (entrada === null) return; // cancelado
+
+    const corpo = {};
+    if (entrada.trim() !== "") {
+      const numero = Number(entrada.replace(",", "."));
+      if (isNaN(numero) || numero < 0) {
+        alert("Valor inválido.");
+        return;
+      }
+      corpo.valor_efetivo = numero;
+    }
 
     const resposta = await fetch(`/reservas/${btn.dataset.id}/completar`, {
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(corpo),
     });
 
     if (resposta.ok) {
@@ -186,6 +206,34 @@ document.querySelectorAll(".complete-btn").forEach((btn) => {
     } else {
       const erro = await resposta.json().catch(() => ({}));
       alert(erro.detail || "Erro ao efetivar a reserva.");
+    }
+  });
+});
+
+// ---- Ajustar valor efetivo (ex: promoção aplicada após a venda concluída) ----
+document.querySelectorAll(".edit-value-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const entrada = prompt("Novo valor efetivo da venda (R$):", "");
+
+    if (entrada === null) return; // cancelado
+
+    const numero = Number(entrada.replace(",", "."));
+    if (entrada.trim() === "" || isNaN(numero) || numero < 0) {
+      alert("Valor inválido.");
+      return;
+    }
+
+    const resposta = await fetch(`/reservas/${btn.dataset.id}/valor-efetivo`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ valor_efetivo: numero }),
+    });
+
+    if (resposta.ok) {
+      window.location.reload();
+    } else {
+      const erro = await resposta.json().catch(() => ({}));
+      alert(erro.detail || "Erro ao ajustar o valor efetivo.");
     }
   });
 });

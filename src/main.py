@@ -27,6 +27,7 @@ from models import (
     CarrinhoProdutoLink,
     ReservaCreate,
     ReservaUpdate,
+    ValorEfetivoUpdate,
 )
 from datetime import datetime
 import os
@@ -673,7 +674,11 @@ def deletar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
 
 # rota para concluir uma reserva
 @app.put("/reservas/{reserva_id}/completar")
-def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
+def concluir_reserva(
+    reserva_id: int,
+    dados: ValorEfetivoUpdate = ValorEfetivoUpdate(),
+    admin: Vendedor = Depends(get_admin),
+):
     with Session(engine) as session:
         reserva = session.get(Reserva, reserva_id)
 
@@ -683,9 +688,44 @@ def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
         if reserva.concluida:
             raise HTTPException(400, "Reserva já está concluída")
 
+        if dados.valor_efetivo is not None and dados.valor_efetivo < 0:
+            raise HTTPException(400, "Valor efetivo não pode ser negativo")
+
         reserva.concluida = True
-        reserva.valor_efetivo = reserva.valor
+        reserva.valor_efetivo = (
+            dados.valor_efetivo if dados.valor_efetivo is not None else reserva.valor
+        )
         reserva.data_conclusao = datetime.now()
+
+        session.add(reserva)
+        session.commit()
+        session.refresh(reserva)
+
+        return reserva
+
+
+@app.put("/reservas/{reserva_id}/valor-efetivo")
+def editar_valor_efetivo(
+    reserva_id: int, dados: ValorEfetivoUpdate, admin: Vendedor = Depends(get_admin)
+):
+    if dados.valor_efetivo is None:
+        raise HTTPException(400, "Informe o novo valor efetivo.")
+
+    if dados.valor_efetivo < 0:
+        raise HTTPException(400, "O valor efetivo não pode ser negativo.")
+
+    with Session(engine) as session:
+        reserva = session.get(Reserva, reserva_id)
+
+        if reserva is None:
+            raise HTTPException(404, "Reserva não encontrada")
+
+        if not reserva.concluida:
+            raise HTTPException(
+                400, "A reserva precisa estar efetivada para ajustar o valor."
+            )
+
+        reserva.valor_efetivo = dados.valor_efetivo
 
         session.add(reserva)
         session.commit()
@@ -832,26 +872,30 @@ def remove_item(
 
 # rota para sincronizar o carrinho local com o carrinho no banco de dados de um cliente após login
 @app.post("/carrinho/sincronizar")
-def sincronizar_carrinho(itens: list[CarrinhoProdutoLink], user: Annotated[Cliente, Depends(get_active_user)]):
+def sincronizar_carrinho(
+    itens: list[CarrinhoProdutoLink], user: Annotated[Cliente, Depends(get_active_user)]
+):
     with Session(engine) as session:
-        carrinho = _get_or_create_carrinho(session, user.id);
+        carrinho = _get_or_create_carrinho(session, user.id)
 
         for item in itens:
-            link = session.exec(select(CarrinhoProdutoLink).where( 
-                CarrinhoProdutoLink.carrinho_id == carrinho.id,
-                CarrinhoProdutoLink.produto_id == item.produto_id
-            )).first()
-            
+            link = session.exec(
+                select(CarrinhoProdutoLink).where(
+                    CarrinhoProdutoLink.carrinho_id == carrinho.id,
+                    CarrinhoProdutoLink.produto_id == item.produto_id,
+                )
+            ).first()
+
             if link:
                 link.quantidade += item.quantidade
             else:
-                session.add(CarrinhoProdutoLink(
-                    carrinho_id=carrinho.id,
-                    produto_id=item.produto_id,
-                    quantidade=item.quantidade
-                ))
+                session.add(
+                    CarrinhoProdutoLink(
+                        carrinho_id=carrinho.id,
+                        produto_id=item.produto_id,
+                        quantidade=item.quantidade,
+                    )
+                )
 
         session.commit()
         return {"ok": True}
-                            
-            
