@@ -54,9 +54,33 @@ async function login() {
     );
 
     if (resposta.ok) {
-	const data = await resposta.json();
+	await sincronizarCarrinho();
 	window.location.href = "/"
     } else {
 	alert("Usuário ou senha incorretos.");
     }
+}
+
+// Função que sincroniza os carrinho no localStorage e o do Banco de Dados após o login
+async function sincronizarCarrinho() {
+    const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+    if(carrinho.length == 0)
+	return;
+
+    const itens = carrinho.map(item => ({
+	produto_id: item.id,
+	quantidade: item.quantidade
+    }));
+
+    const response = await fetch("/carrinho/sincronizar", {
+	method: "POST",
+	headers: {"Content-Type": "application/json"},
+	body: JSON.stringy(itens)
+    });
+
+    if(response.ok){
+	localStorage.removeItem("carrinho");
+    }
+    
 }
