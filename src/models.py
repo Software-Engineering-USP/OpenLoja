@@ -86,6 +86,10 @@ class ReservaUpdate(SQLModel):
     itens: List[ReservaItemInput] | None = None
 
 
+class ValorEfetivoUpdate(SQLModel):
+    valor_efetivo: float | None = None
+
+
 class Avaliacao(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 

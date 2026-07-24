@@ -37,6 +37,7 @@
                         <th>Cliente</th>
                         <th>Produtos</th>
                         <th>Valor</th>
+                        <th>Valor Efetivo</th>
                         <th>Status</th>
                         <th>Ações</th>
                     </tr>
@@ -47,6 +48,7 @@
                     <tr data-id="{{ r.id }}"
                         data-cliente="{{ r.cliente_nome|lower }}"
                         data-cliente-id="{{ r.cliente_id }}"
+                        data-valor="{{ r.valor }}"
                         data-itens='{{ r.itens_json }}'>
                         <td class="product-cell">
                             <span class="product-name">{{ r.cliente_nome }}</span>
@@ -60,6 +62,13 @@
                         </td>
                         <td>R$ {{ "%.2f"|format(r.valor) }}</td>
                         <td>
+                            {% if r.valor_efetivo is not none %}
+                            R$ {{ "%.2f"|format(r.valor_efetivo) }}
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
+                        <td>
                             {% if r.concluida %}
                             <span class="tag tag-ok">Concluída</span>
                             {% else %}
@@ -70,13 +79,15 @@
                             {% if not r.concluida %}
                             <button type="button" class="icon-btn complete-btn" data-id="{{ r.id }}" title="Efetivar">Efetivar</button>
                             <button type="button" class="icon-btn edit-btn" data-id="{{ r.id }}" title="Edit">Editar</button>
+                            {% else %}
+                            <button type="button" class="icon-btn edit-value-btn" data-id="{{ r.id }}" title="Ajustar valor efetivo">Ajustar Valor</button>
                             {% endif %}
                             <button type="button" class="icon-btn danger-btn delete-btn" data-id="{{ r.id }}" title="Delete">Deletar</button>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="empty-row">Nenhuma reserva registrada.</td>
+                        <td colspan="6" class="empty-row">Nenhuma reserva registrada.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
