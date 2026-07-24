@@ -828,3 +828,30 @@ def remove_item(
             session.delete(link)
             session.commit()
         return {"msg": "item removido"}
+
+
+# rota para sincronizar o carrinho local com o carrinho no banco de dados de um cliente após login
+@app.post("/carrinho/sincronizar")
+def sincronizar_carrinho(itens: list[CarrinhoProdutoLink], user: Annotated[Cliente, Depends(get_active_user)]):
+    with Session(engine) as session:
+        carrinho = _get_or_create_carrinho(session, user.id);
+
+        for item in itens:
+            link = session.exec(select(CarrinhoProdutoLink).where( 
+                CarrinhoProdutoLink.carrinho_id == carrinho.id,
+                CarrinhoProdutoLink.produto_id == item.produto_id
+            )).first()
+            
+            if link:
+                link.quantidade += item.quantidade
+            else:
+                session.add(CarrinhoProdutoLink(
+                    carrinho_id=carrinho.id,
+                    produto_id=item.produto_id,
+                    quantidade=item.quantidade
+                ))
+
+        session.commit()
+        return {"ok": True}
+                            
+            
