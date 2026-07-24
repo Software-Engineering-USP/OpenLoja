@@ -5,7 +5,7 @@ const cartOverlay = document.getElementById("cart-sidebar-overlay");
 const closeCart = document.getElementById("close-cart");
 
 // Variável com os botões que adicionam no carrinho
-const botao = document.querySelectorAll(".add-cart");
+const botoes = document.querySelectorAll(".buy-btn");
 
 // Função auxiliar para atulizar o HTML e mostrar o carrinho ao clicar 
 function mostrarCarrinho(itens){
@@ -19,7 +19,7 @@ function mostrarCarrinho(itens){
         container.innerHTML += `
             <div class="cart-item">
 
-                <img src="/static/${item.imagem}" alt="${item.nome}">
+                <img src="${item.imagem}" alt="${item.nome}">
 
                 <div class="cart-info">
                     <h4>${item.nome}</h4>
@@ -42,26 +42,79 @@ function mostrarCarrinho(itens){
 
 }
 
+document.addEventListener("click", async function (e) {
+
+    const botao = e.target.closest(".remove-item");
+    if (!botao) return;
+
+    const produtoId = botao.dataset.id;
+
+    if (usuarioLogado) {
+
+        await fetch(`/carrinho/item/${produtoId}`, {
+            method: "DELETE"
+        });
+
+    } else {
+
+        let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+        carrinho = carrinho.filter(item => item.id != produtoId);
+
+        localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    }
+
+    await carregarCarrinho();
+
+}); 
+
 // Função que carrega o carrinho do banco de dados ou do localStorage
-async function carregarCarrinho(){
+async function carregarCarrinho() {
 
-    if(usuarioLogado){
-	const response = await fetch("/carrinho");
+    if (usuarioLogado) {
 
-	if(!response.ok){
+        const response = await fetch("/carrinho");
+
+        if (!response.ok) {
             console.error("Erro ao carregar carrinho");
             return;
-	}
+        }
 
-	const carrinho = await response.json();
-	document.getElementById("cart-total").textContent =`R$ ${carrinho.total.toFixed(2)}`;
-	mostrarCarrinho(carrinho.itens);
+        const carrinho = await response.json();
+
+        document.getElementById("cart-total").textContent =
+            `R$ ${carrinho.total.toFixed(2)}`;
+
+        mostrarCarrinho(carrinho.itens);
+
+        const quantidade = carrinho.itens.reduce(
+            (soma, item) => soma + item.quantidade,
+            0
+        );
+
+        atualizarCarrinho(quantidade);
+
     } else {
-	const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-	mostrarCarrinho(carrinho);
-    }
-    
 
+        const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+        mostrarCarrinho(carrinho);
+
+        const total = carrinho.reduce(
+            (soma, item) => soma + item.preco * item.quantidade,
+            0
+        );
+
+        document.getElementById("cart-total").textContent =
+            `R$ ${total.toFixed(2)}`;
+
+        const quantidade = carrinho.reduce(
+            (soma, item) => soma + item.quantidade,
+            0
+        );
+
+        atualizarCarrinho(quantidade);
+    }
 }
 
 // Função para abrir a aba do carrinho
@@ -90,15 +143,18 @@ botoes.forEach(botao => {
 
 	if(usuarioLogado){
 	    await fetch(
-		"/carrinho/add?produto_id=${produtoId}&quantidade=1",
-		{
-		    method: "POST"
-		}
-	    );
-	
+            `/carrinho/add?produto_id=${produtoId}&quantidade=1`,
+            {
+                method: "POST"
+            }
+        );
+
+        await carregarCarrinho();
 	}
+
 	else{
 	    adicionarCarrinhoLocal(this);
+        await carregarCarrinho();
 	}
     });
 });
@@ -130,7 +186,11 @@ function adicionarCarrinhoLocal(botao){
 	carrinho.push(produto);
     }
 
-    localStorage.setItem("carrinho", JSON.stringify("carrinho"));
+    localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    atualizarCarrinho();
 }
 
-
+window.addEventListener("DOMContentLoaded", async () => {
+    await carregarCarrinho();
+    atualizarCarrinho();
+});

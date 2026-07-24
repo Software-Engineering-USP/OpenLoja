@@ -232,10 +232,16 @@ def home_cliente(
     request: Request,
     user: Cliente | Vendedor | None = Depends(get_optional_user),
 ):
+    with Session(engine) as session:
+        produtos = session.exec(select(Produto)).all()
+
     return templates.TemplateResponse(
         request=request,
         name="frontpage.html",
-        context={"usuario": user},
+        context={
+            "usuario": user,
+            "produtos": produtos,
+        },
     )
 
 
@@ -783,7 +789,7 @@ def get_carrinho(user: Annotated[Cliente, Depends(get_active_user)]):
         total = 0
         itens_formatados = []
         for produto, quantidade in itens:
-            total += produto.preco
+            total += produto.preco * quantidade
 
             itens_formatados.append(
                 {

@@ -49,7 +49,7 @@
               <a href="#cart" id="open-cart" class="header-action">
                 <i class="fas fa-shopping-cart"></i>
                 <span>Carrinho</span>
-                <span class="badge">3</span>
+                <span class="badge" id="cart-count" style="display: none;">0</span>
               </a>
 
             </div>
@@ -81,7 +81,9 @@
                 <article class="product-card" data-tags="{{ produto.tag }}">
                     <a href="/product/{{ produto.id }}" class="product-image">
                         <span class="card-badge new-badge">Novo</span>
-                        <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}">
+                        {% if produto.imagem %}
+                        <img src="/static/{{ produto.imagem }}" alt="{{ produto.nome }}">
+                        {% endif %}
                     </a>
                     <div class="product-info">
                         <a href="/product/{{ produto.id }}" class="product-title-link">
