@@ -3,6 +3,7 @@
 const openCart = document.getElementById("open-cart");
 const cartOverlay = document.getElementById("cart-sidebar-overlay");
 const closeCart = document.getElementById("close-cart");
+const checkoutBtn = document.querySelector(".checkout-btn");
 
 // Variável com os botões que adicionam no carrinho
 const botoes = document.querySelectorAll(".buy-btn");
@@ -117,6 +118,31 @@ async function carregarCarrinho() {
     }
 }
 
+async function sincronizarCarrinho(){
+
+    const carrinhoLocal = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+    if(carrinhoLocal.length === 0)
+        return;
+
+
+    await fetch("/carrinho/sincronizar", {
+        method: "POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(
+            carrinhoLocal.map(item => ({
+                produto_id: item.id,
+                quantidade: item.quantidade
+            }))
+        )
+    });
+
+
+    localStorage.removeItem("carrinho");
+}
+
 // Função para abrir a aba do carrinho
 openCart.addEventListener("click", async function (e) {
     e.preventDefault();
@@ -134,6 +160,17 @@ cartOverlay.addEventListener("click", function (e) {
         if (e.target === cartOverlay) {
             cartOverlay.classList.remove("active");
         }
+});
+
+checkoutBtn.addEventListener("click", async function(){
+
+    if (!usuarioLogado) {
+        window.location.href = "/paginalogin";
+        return;
+    }
+
+    // aqui futuramente você coloca a página de pagamento
+    window.location.href = "/checkout";
 });
 
 // Função para adicionar produtos no carrinho
@@ -154,7 +191,6 @@ botoes.forEach(botao => {
 
 	else{
 	    adicionarCarrinhoLocal(this);
-        await carregarCarrinho();
 	}
     });
 });
@@ -187,10 +223,13 @@ function adicionarCarrinhoLocal(botao){
     }
 
     localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    const quantidade = carrinho.reduce(
+        (soma, item) => soma + item.quantidade,
+        0
+    );
     atualizarCarrinho();
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
     await carregarCarrinho();
-    atualizarCarrinho();
 });
