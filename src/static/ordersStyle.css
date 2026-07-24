@@ -1,0 +1,90 @@
+/* Complementos ao dashboardStyle.css específicos da página de Pedidos.
+   toolbar, table-wrapper, data-table, tag, icon-btn e modal/modal-content
+   já vêm de dashboardStyle.css — aqui só ficam o seletor de itens e o
+   mini "carrinho" de produtos dentro do modal de reserva. */
+
+.order-modal-content {
+  max-width: 460px;
+}
+
+.modal-content select {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #dde1ec;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.item-adder {
+  display: flex;
+  gap: 8px;
+}
+.item-adder select {
+  flex: 1;
+}
+.item-adder input {
+  width: 70px;
+}
+.item-adder .icon-btn {
+  white-space: nowrap;
+}
+
+.order-items-list {
+  border: 1px solid #eceef6;
+  border-radius: 10px;
+  padding: 4px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eceef6;
+}
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.order-item-nome {
+  font-size: 14px;
+  color: #111827;
+}
+.order-item-qtd {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.order-item-subtotal {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.order-item-remove {
+  border: none;
+  background: none;
+  color: #b91c1c;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.order-item-remove:hover {
+  color: #7f1d1d;
+}
+
+.order-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  padding-top: 6px;
+}
+.order-total-row strong {
+  font-size: 18px;
+}

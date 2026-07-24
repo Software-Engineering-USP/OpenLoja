@@ -1,14 +1,37 @@
 # imports necessários para o funcionamento do projeto
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Cookie, Response , UploadFile, File
+from fastapi import (
+    FastAPI,
+    Request,
+    Depends,
+    HTTPException,
+    status,
+    Cookie,
+    Response,
+    UploadFile,
+    File,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
-from models import Vendedor, Cliente, Produto, Reserva, Avaliacao, Usuario, Carrinho, CarrinhoProdutoLink
+from models import (
+    Vendedor,
+    Cliente,
+    Produto,
+    Reserva,
+    ReservaProdutoLink,
+    Avaliacao,
+    Usuario,
+    Carrinho,
+    CarrinhoProdutoLink,
+    ReservaCreate,
+    ReservaUpdate,
+)
 from datetime import datetime
 import os
 import shutil
+import json
 
 # setup do Fastapi
 app = FastAPI()
@@ -29,10 +52,11 @@ def create_db():
 def on_startup() -> None:
     create_db()
 
+
 # função auxiliar que retorna o usuário logado, se houver, sem exigir autenticação
 def get_optional_user(
     session_user: Annotated[str | None, Cookie()] = None,
-    tipo: Annotated[str | None, Cookie()] = None
+    tipo: Annotated[str | None, Cookie()] = None,
 ):
     if not session_user:
         return None
@@ -81,6 +105,7 @@ def get_active_user(
 
     return user
 
+
 def get_admin(user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
     if not isinstance(user, Vendedor):
         raise HTTPException(
@@ -89,6 +114,7 @@ def get_admin(user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
         )
 
     return user
+
 
 # função auxiliar que captura o TIPO do usuário logado no cookie
 def get_active_type(tipo: Annotated[str | None, Cookie()] = None):
@@ -119,10 +145,12 @@ async def root(
 
     return RedirectResponse(url="/homeCliente", status_code=303)
 
+
 # rota para login
 @app.get("/paginalogin", response_class=HTMLResponse)
 async def paginalogin(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
+
 
 @app.get("/paginacria", response_class=HTMLResponse)
 async def paginacriar(request: Request):
@@ -220,6 +248,60 @@ def stock(request: Request, admin: Vendedor = Depends(get_admin)):
         request=request,
         name="stock.html",
         context={"produtos": produtos},
+    )
+
+
+# rota de pedidos (reservas) do dono da loja
+@app.get("/orders")
+def orders(request: Request, admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        clientes = session.exec(select(Cliente)).all()
+        produtos = session.exec(select(Produto)).all()
+        reservas = session.exec(select(Reserva)).all()
+        links = session.exec(select(ReservaProdutoLink)).all()
+
+        produtos_por_id = {p.id: p for p in produtos}
+        links_por_reserva: dict[int, list[ReservaProdutoLink]] = {}
+        for link in links:
+            links_por_reserva.setdefault(link.reserva_id, []).append(link)
+
+        reservas_view = []
+        for r in reservas:
+            itens = []
+            for link in links_por_reserva.get(r.id, []):
+                produto = produtos_por_id.get(link.produto_id)
+                if produto:
+                    itens.append(
+                        {
+                            "produto_id": produto.id,
+                            "nome": produto.nome,
+                            "quantidade": link.quantidade,
+                            "preco": produto.preco,
+                        }
+                    )
+
+            reservas_view.append(
+                {
+                    "id": r.id,
+                    "cliente_id": r.cliente_id,
+                    "cliente_nome": r.cliente.nome if r.cliente else "—",
+                    "valor": r.valor,
+                    "concluida": r.concluida,
+                    "valor_efetivo": r.valor_efetivo,
+                    "data_conclusao": r.data_conclusao,
+                    "itens": itens,
+                    "itens_json": json.dumps(itens),
+                }
+            )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="orders.html",
+        context={
+            "reservas": reservas_view,
+            "clientes": clientes,
+            "produtos": produtos,
+        },
     )
 
 
@@ -358,7 +440,9 @@ def buscar_produto(produto_id: int):
 
 # rota para modificação de produto especificado por ID
 @app.put("/produtos/{produto_id}")
-def atualizar_produto(produto_id: int, dados: Produto, admin: Vendedor = Depends(get_admin)):
+def atualizar_produto(
+    produto_id: int, dados: Produto, admin: Vendedor = Depends(get_admin)
+):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
@@ -374,11 +458,14 @@ def atualizar_produto(produto_id: int, dados: Produto, admin: Vendedor = Depends
         return produto
 
 
-@app.post("/produtos/{produto_id}/imagem",responses={404: {"description": "Produto não encontrado"}})
+@app.post(
+    "/produtos/{produto_id}/imagem",
+    responses={404: {"description": "Produto não encontrado"}},
+)
 def enviar_imagem(
     produto_id: int,
     imagem: UploadFile = File(...),
-    admin: Vendedor = Depends(get_admin)
+    admin: Vendedor = Depends(get_admin),
 ):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
@@ -417,6 +504,173 @@ def deletar_produto(produto_id: int, admin: Vendedor = Depends(get_admin)):
         return {"message": "Produto removido"}
 
 
+# rota para criar reserva
+@app.post("/reservas")
+def criar_reserva(
+    dados: ReservaCreate,
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+):
+    if not dados.itens:
+        raise HTTPException(400, "A reserva precisa ter ao menos um produto.")
+
+    with Session(engine) as session:
+        if isinstance(user, Vendedor):
+            if dados.cliente_id is None:
+                raise HTTPException(
+                    400, "Informe o cliente para quem a reserva será criada."
+                )
+            cliente = session.get(Cliente, dados.cliente_id)
+            if cliente is None:
+                raise HTTPException(404, "Cliente não encontrado")
+            cliente_id = cliente.id
+        else:
+            cliente_id = user.id
+
+        produto_ids = [item.produto_id for item in dados.itens]
+        produtos = session.exec(
+            select(Produto).where(Produto.id.in_(produto_ids))
+        ).all()
+        produtos_por_id = {p.id: p for p in produtos}
+
+        faltando = set(produto_ids) - produtos_por_id.keys()
+        if faltando:
+            raise HTTPException(
+                404, f"Produto(s) não encontrado(s): {sorted(faltando)}"
+            )
+
+        valor_total = sum(
+            produtos_por_id[item.produto_id].preco * item.quantidade
+            for item in dados.itens
+        )
+
+        reserva = Reserva(cliente_id=cliente_id, valor=valor_total)
+        session.add(reserva)
+        session.commit()
+        session.refresh(reserva)
+
+        for item in dados.itens:
+            session.add(
+                ReservaProdutoLink(
+                    reserva_id=reserva.id,
+                    produto_id=item.produto_id,
+                    quantidade=item.quantidade,
+                )
+            )
+
+        session.commit()
+        session.refresh(reserva)
+
+        return reserva
+
+
+# rota para listar todas as reservas
+@app.get("/reservas")
+def listar_reservas(admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        return session.exec(select(Reserva)).all()
+
+
+# rota para buscar uma reserva específica pelo ID
+@app.get("/reservas/{reserva_id}")
+def buscar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        reserva = session.get(Reserva, reserva_id)
+
+        if reserva is None:
+            raise HTTPException(404, "Reserva não encontrada")
+
+        return reserva
+
+
+# rota para editar uma reserva (cliente e/ou produtos associados)
+@app.put("/reservas/{reserva_id}")
+def editar_reserva(
+    reserva_id: int, dados: ReservaUpdate, admin: Vendedor = Depends(get_admin)
+):
+    with Session(engine) as session:
+        reserva = session.get(Reserva, reserva_id)
+
+        if reserva is None:
+            raise HTTPException(404, "Reserva não encontrada")
+
+        if reserva.concluida:
+            raise HTTPException(400, "Reserva já concluída não pode ser editada")
+
+        if dados.cliente_id is not None:
+            cliente = session.get(Cliente, dados.cliente_id)
+            if cliente is None:
+                raise HTTPException(404, "Cliente não encontrado")
+            reserva.cliente_id = dados.cliente_id
+
+        if dados.itens is not None:
+            if not dados.itens:
+                raise HTTPException(400, "A reserva precisa ter ao menos um produto.")
+
+            produto_ids = [item.produto_id for item in dados.itens]
+            produtos = session.exec(
+                select(Produto).where(Produto.id.in_(produto_ids))
+            ).all()
+            produtos_por_id = {p.id: p for p in produtos}
+
+            faltando = set(produto_ids) - produtos_por_id.keys()
+            if faltando:
+                raise HTTPException(
+                    404, f"Produto(s) não encontrado(s): {sorted(faltando)}"
+                )
+
+            links_antigos = session.exec(
+                select(ReservaProdutoLink).where(
+                    ReservaProdutoLink.reserva_id == reserva_id
+                )
+            ).all()
+            for link in links_antigos:
+                session.delete(link)
+            session.flush()
+
+            for item in dados.itens:
+                session.add(
+                    ReservaProdutoLink(
+                        reserva_id=reserva_id,
+                        produto_id=item.produto_id,
+                        quantidade=item.quantidade,
+                    )
+                )
+
+            reserva.valor = sum(
+                produtos_por_id[item.produto_id].preco * item.quantidade
+                for item in dados.itens
+            )
+
+        session.add(reserva)
+        session.commit()
+        session.refresh(reserva)
+
+        return reserva
+
+
+# rota para deletar uma reserva
+@app.delete("/reservas/{reserva_id}")
+def deletar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        reserva = session.get(Reserva, reserva_id)
+
+        if reserva is None:
+            raise HTTPException(404, "Reserva não encontrada")
+
+        links = session.exec(
+            select(ReservaProdutoLink).where(
+                ReservaProdutoLink.reserva_id == reserva_id
+            )
+        ).all()
+        for link in links:
+            session.delete(link)
+
+        session.delete(reserva)
+        session.commit()
+
+        return {"message": "Reserva removida"}
+
+
 # rota para concluir uma reserva
 @app.put("/reservas/{reserva_id}/completar")
 def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
@@ -442,7 +696,9 @@ def concluir_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
 
 # Helpers para rotas de carrinho
 def _get_or_create_carrinho(session: Session, cliente_id: int) -> Carrinho:
-    carrinho = session.exec(select(Carrinho).where(Carrinho.cliente_id == cliente_id)).first()
+    carrinho = session.exec(
+        select(Carrinho).where(Carrinho.cliente_id == cliente_id)
+    ).first()
     if not carrinho:
         carrinho = Carrinho(cliente_id=cliente_id)
         session.add(carrinho)
@@ -450,13 +706,19 @@ def _get_or_create_carrinho(session: Session, cliente_id: int) -> Carrinho:
         session.refresh(carrinho)
     return carrinho
 
+
 def _get_carrinho_or_404(session: Session, cliente_id: int) -> Carrinho:
-    carrinho = session.exec(select(Carrinho).where(Carrinho.cliente_id == cliente_id)).first()
+    carrinho = session.exec(
+        select(Carrinho).where(Carrinho.cliente_id == cliente_id)
+    ).first()
     if not carrinho:
         raise HTTPException(status_code=404, detail="Carrinho não encontrado")
     return carrinho
 
-def _get_carrinho_produto_link(session: Session, carrinho_id: int, produto_id: int) -> CarrinhoProdutoLink | None:
+
+def _get_carrinho_produto_link(
+    session: Session, carrinho_id: int, produto_id: int
+) -> CarrinhoProdutoLink | None:
     return session.exec(
         select(CarrinhoProdutoLink).where(
             (CarrinhoProdutoLink.carrinho_id == carrinho_id)
@@ -478,25 +740,26 @@ def get_carrinho(user: Annotated[Cliente, Depends(get_active_user)]):
         )
         itens = session.exec(resultados).all()
 
-        total = 0;
+        total = 0
         itens_formatados = []
         for produto, quantidade in itens:
-
             total += produto.preco
-            
-            itens_formatados.append({
-                "id": produto.id,
-                "nome": produto.nome,
-                "preco": produto.preco,
-                "imagem": produto.imagem,
-                "quantidade": quantidade
-            })
+
+            itens_formatados.append(
+                {
+                    "id": produto.id,
+                    "nome": produto.nome,
+                    "preco": produto.preco,
+                    "imagem": produto.imagem,
+                    "quantidade": quantidade,
+                }
+            )
 
         return {
             "id": carrinho.id,
             "cliente_id": user.id,
             "itens": itens_formatados,
-            "total": total
+            "total": total,
         }
 
 
@@ -509,7 +772,7 @@ def add_produto(
 ):
     with Session(engine) as session:
         carrinho = _get_or_create_carrinho(session, user.id)
-    
+
         link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if link:
             link.quantidade += quantidade
@@ -523,7 +786,10 @@ def add_produto(
 
 
 # rota para alterar a quantidade de um produto no carrinho
-@app.patch("/carrinho/item", responses={404: {"description": "Carrinho ou item não encontrado"}})
+@app.patch(
+    "/carrinho/item",
+    responses={404: {"description": "Carrinho ou item não encontrado"}},
+)
 def update_item(
     produto_id: int,
     nova_quantidade: int,
@@ -531,32 +797,34 @@ def update_item(
 ):
     with Session(engine) as session:
         carrinho = _get_carrinho_or_404(session, user.id)
-    
+
         link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if not link:
             raise HTTPException(status_code=404, detail="Item não está no carrinho")
-    
+
         if nova_quantidade <= 0:
             session.delete(link)
         else:
             link.quantidade = nova_quantidade
-    
+
         session.commit()
         return {"msg": "quantidade atualizada"}
 
 
 # rota para remover um produto do carrinho
-@app.delete("/carrinho/item/{produto_id}", responses={404: {"description": "Carrinho ou item não encontrado"}})
+@app.delete(
+    "/carrinho/item/{produto_id}",
+    responses={404: {"description": "Carrinho ou item não encontrado"}},
+)
 def remove_item(
     produto_id: int,
     user: Annotated[Cliente, Depends(get_active_user)],
 ):
     with Session(engine) as session:
         carrinho = _get_carrinho_or_404(session, user.id)
-    
+
         link = _get_carrinho_produto_link(session, carrinho.id, produto_id)
         if link:
             session.delete(link)
             session.commit()
         return {"msg": "item removido"}
-
