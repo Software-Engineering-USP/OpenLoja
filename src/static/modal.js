@@ -223,11 +223,12 @@ function adicionarCarrinhoLocal(botao){
     }
 
     localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    
     const quantidade = carrinho.reduce(
         (soma, item) => soma + item.quantidade,
         0
     );
-    atualizarCarrinho();
+    atualizarCarrinho(quantidade);
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
