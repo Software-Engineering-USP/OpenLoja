@@ -174,25 +174,31 @@ checkoutBtn.addEventListener("click", async function(){
 });
 
 // Função para adicionar produtos no carrinho
-botoes.forEach(botao => {
-    botao.addEventListener("click", async function(){
-	const produtoId = this.dataset.id;
+document.addEventListener("click", async function(e) {
 
-	if(usuarioLogado){
-	    await fetch(
-            `/carrinho/add?produto_id=${produtoId}&quantidade=1`,
+    const botao = e.target.closest(".buy-btn");
+    if (!botao) return;
+
+    const produtoId = botao.dataset.id;
+    const quantidade =Number(document.getElementById("quantidade")?.value) || 1;
+
+    if (usuarioLogado) {
+
+        await fetch(
+            `/carrinho/add?produto_id=${produtoId}&quantidade=${quantidade}`,
             {
                 method: "POST"
             }
         );
 
         await carregarCarrinho();
-	}
 
-	else{
-	    adicionarCarrinhoLocal(this);
-	}
-    });
+    } else {
+
+        adicionarCarrinhoLocal(botao, quantidade);
+
+    }
+
 });
     
 // Função auxiliar para adicionar no carrinho local se o usuário estiver deslogado

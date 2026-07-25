@@ -75,33 +75,47 @@
             </div>
 
             <!-- Grid de Produtos Dinâmico -->
-            <div class="product-grid" id="product-grid">
+	    <section id="catalog-view">
+              <div class="product-grid" id="product-grid">
 
                 {% for produto in produtos %}
                 <article class="product-card" data-tags="{{ produto.tag }}">
-                    <a href="/product/{{ produto.id }}" class="product-image">
-                        <span class="card-badge new-badge">Novo</span>
-                        {% if produto.imagem %}
-                        <img src="/static/{{ produto.imagem }}" alt="{{ produto.nome }}">
-                        {% endif %}
-                    </a>
-                    <div class="product-info">
-                        <a href="/product/{{ produto.id }}" class="product-title-link">
-                            <h3 class="product-title">{{ produto.nome }}</h3>
-                        </a>
-                        <p class="product-category">{{ produto.categoria }}</p>
-                        <p class="product-price">R$ {{ produto.preco }}</p>
-                        <button class="buy-btn" data-id="{{ produto.id }}">Adicionar ao Carrinho</button>
-                    </div>
+                  <a 
+		    href="#"
+		    class="product-image"
+		    data-id="{{ produto.id }}"
+		    >
+		    <span class="card-badge new-badge">Novo</span>
+
+		    {% if produto.imagem %}
+		    <img src="/static/{{ produto.imagem }}" alt="{{ produto.nome }}">
+		    {% endif %}
+		  </a>
+                  <div class="product-info">
+                    <a 
+		      href="#"
+		      class="product-title-link"
+		      data-id="{{ produto.id }}"
+		      >
+		      <h3 class="product-title">{{ produto.nome }}</h3>
+		    </a>
+                    <p class="product-category">{{ produto.categoria }}</p>
+                    <p class="product-price">R$ {{ produto.preco }}</p>
+                    <button class="buy-btn" data-id="{{ produto.id }}">Adicionar ao Carrinho</button>
+                  </div>
                 </article>
                 {% endfor %}
 
-            </div>
+              </div>
+	    </section>
 
             <div id="no-results" class="hidden-message">
                 Nenhum produto encontrado para a sua busca.
             </div>
         </section>
+	<section id="product-view" style="display:none">
+
+	</section>
     </main>
 
 
