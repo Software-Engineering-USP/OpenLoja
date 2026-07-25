@@ -169,8 +169,23 @@ checkoutBtn.addEventListener("click", async function(){
         return;
     }
 
-    // aqui futuramente você coloca a página de pagamento
-    window.location.href = "/checkout";
+    // aqui você coloca a página de pagamento
+    try {
+        const resposta = await fetch("/checkout", {
+            method: "POST"
+        });
+
+        if (resposta.ok) {
+            alert("Compra finalizada com sucesso!");
+            window.location.href = "/homeCliente";
+        } else {
+            const erro = await resposta.json();
+            alert("Erro ao finalizar compra: " + (erro.detail || "Erro desconhecido"));
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Ocorreu um erro ao tentar processar a compra.");
+    }
 });
 
 // Função para adicionar produtos no carrinho

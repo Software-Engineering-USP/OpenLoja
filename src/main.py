@@ -312,6 +312,37 @@ def orders(request: Request, admin: Vendedor = Depends(get_admin)):
     )
 
 
+# rota para o gráfico de receita mensal do painel de estatísticas
+@app.get("/estatisticas/receita-mensal")
+def receita_mensal(admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        reservas = session.exec(
+            select(Reserva)
+            .where(Reserva.concluida == True)
+            .where(Reserva.data_conclusao != None)
+        ).all()
+
+        receita_agrupada = {}
+        for r in reservas:
+            ano_mes = r.data_conclusao.strftime("%Y-%m")
+            valor = r.valor_efetivo if r.valor_efetivo is not None else r.valor
+            receita_agrupada[ano_mes] = receita_agrupada.get(ano_mes, 0.0) + valor
+
+        labels = []
+        valores = []
+        for ano_mes in sorted(receita_agrupada.keys()):
+            dt = datetime.strptime(ano_mes, "%Y-%m")
+            meses_pt = {
+                1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
+                7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+            }
+            label_br = f"{meses_pt[dt.month]}/{dt.year}"
+            labels.append(label_br)
+            valores.append(round(receita_agrupada[ano_mes], 2))
+
+        return {"labels": labels, "valores": valores}
+
+
 # rota de estatísticas do dono da loja
 @app.get("/statistics")
 def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
@@ -328,16 +359,16 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
 
         produtos_por_id = {p.id: p for p in produtos}
         estatisticas["receita_mensal"] = sum(
-            produtos_por_id[r.produto_id].preco
-            for r in reservas
-            if r.produto_id in produtos_por_id
+            r.valor_efetivo if r.valor_efetivo is not None else r.valor
+            for r in reservas if r.concluida
         )
 
         vendas_por_produto: dict[int, int] = {}
-        for r in reservas:
-            if r.produto_id is not None:
-                vendas_por_produto[r.produto_id] = (
-                    vendas_por_produto.get(r.produto_id, 0) + 1
+        links_vendidos = session.exec(select(ReservaProdutoLink)).all()
+        for link in links_vendidos:
+            if link.produto_id is not None:
+                vendas_por_produto[link.produto_id] = (
+                    vendas_por_produto.get(link.produto_id, 0) + link.quantidade
                 )
 
         top_produtos = sorted(
@@ -905,3 +936,56 @@ def sincronizar_carrinho(
 
         session.commit()
         return {"ok": True}
+
+
+# rota para finalizar a compra transformando o carrinho em reserva
+@app.post("/checkout")
+def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
+    with Session(engine) as session:
+        carrinho = _get_carrinho_or_404(session, user.id)
+
+        links = session.exec(
+            select(CarrinhoProdutoLink).where(
+                CarrinhoProdutoLink.carrinho_id == carrinho.id
+            )
+        ).all()
+
+        if not links:
+            raise HTTPException(status_code=400, detail="O carrinho está vazio.")
+
+        valor_total = 0.0
+        for link in links:
+            produto = session.get(Produto, link.produto_id)
+            if not produto:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Produto com ID {link.produto_id} não encontrado.",
+                )
+            if produto.quantidade_em_estoque < link.quantidade:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Estoque insuficiente para '{produto.nome}'. Disponível: {produto.quantidade_em_estoque}, Solicitado: {link.quantidade}",
+                )
+            valor_total += produto.preco * link.quantidade
+
+        reserva = Reserva(cliente_id=user.id, valor=valor_total, concluida=False)
+        session.add(reserva)
+        session.commit()
+        session.refresh(reserva)
+
+        for link in links:
+            produto = session.get(Produto, link.produto_id)
+            produto.quantidade_em_estoque -= link.quantidade
+            session.add(produto)
+
+            session.add(
+                ReservaProdutoLink(
+                    reserva_id=reserva.id,
+                    produto_id=link.produto_id,
+                    quantidade=link.quantidade,
+                )
+            )
+            session.delete(link)
+
+        session.commit()
+        return {"msg": "Compra finalizada com sucesso!", "reserva_id": reserva.id}
