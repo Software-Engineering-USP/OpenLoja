@@ -5,7 +5,7 @@ async function carregarGraficoReceita() {
   let valores = [];
 
   try {
-    const resposta = await fetch("/ROTA/receita-mensal");
+    const resposta = await fetch("/estatisticas/receita-mensal");
     if (resposta.ok) {
       const dados = await resposta.json();
       labels = dados.labels;
