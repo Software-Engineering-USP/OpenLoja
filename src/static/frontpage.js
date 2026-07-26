@@ -37,6 +37,52 @@ linksProduto.forEach(link => {
 
 });
 
+const inputBusca = document.getElementById("js-search-input");
+const mensagem = document.getElementById("no-results");
+
+if (inputBusca) {
+
+    inputBusca.addEventListener("input", function () {
+
+        const texto = this.value.toLowerCase().trim();
+
+        let encontrados = 0;
+
+        document.querySelectorAll(".product-card").forEach(card => {
+
+            const nome = card.querySelector(".product-title")
+                .textContent
+                .toLowerCase();
+
+            const categoria = (card.dataset.categoria || "").toLowerCase();
+
+            const descricao = (card.dataset.descricao || "").toLowerCase();
+
+            const tags = (card.dataset.tag || "")
+                .toLowerCase()
+                .split(",")
+                .map(tag => tag.trim());
+
+            if (
+                nome.includes(texto) ||
+                categoria.includes(texto) ||
+                descricao.includes(texto) ||
+                tags.some(tag => tag.includes(texto))
+            ) {
+                card.style.display = "";
+                encontrados++;
+            } else {
+                card.style.display = "none";
+            }
+
+        });
+
+        mensagem.style.display = encontrados ? "none" : "block";
+
+    });
+
+}
+
 function voltarCatalogo(){
 
     document.getElementById("product-view")
@@ -95,6 +141,17 @@ async function abrirProduto(id){
                     R$ ${produto.preco}
                 </p>
 
+                <p class="product-detail-category">
+                    ${produto.categoria}
+                </p>
+
+                <p class="product-detail-description">
+                    ${produto.descricao}
+                </p>
+
+                <p class="product-detail-tags">
+                    ${produto.tag}
+                </p>
 
                 <p>
                     Disponível:

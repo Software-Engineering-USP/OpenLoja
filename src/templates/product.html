@@ -30,7 +30,21 @@
 <p class="product-detail-price">${{ produto.preco }}</p>
 
                 {% if produto.quantidade_em_estoque > 0 %}
-<p class="stock-info in-stock">Disponível ({{ produto.quantidade_em_estoque }} {{ produto.unidade_medida }})</p>
+
+<p class="product-detail-category">
+    <strong>Categoria:</strong> {{ produto.categoria }}
+</p>
+
+<span class="product-detail-tag">
+    {{ produto.tag }}
+</span>
+
+<div class="product-detail-description">
+    <h3>Descrição</h3>
+    <p>{{ produto.descricao }}</p>
+</div>
+
+<p class="stock-info in-stock">Disponível ({{ produto.quantidade_em_estoque }}{{ produto.unidade_medida }})</p>
                 {% else %}
 <p class="stock-info out-of-stock">Fora de estoque</p>
                 {% endif %}
@@ -42,10 +56,13 @@ id="edit-product-btn"
 class="primary-btn"
 data-id="{{ produto.id }}"
 data-nome="{{ produto.nome }}"
+data-descricao="{{ produto.descricao }}"
+data-categoria="{{ produto.categoria }}"
+data-tag="{{ produto.tag }}"
 data-quantidade="{{ produto.quantidade_em_estoque }}"
 data-preco="{{ produto.preco }}"
 >
-                        Editar Produto
+    Editar Produto
 </button>
 <button type="button" id="delete-product-btn" class="secondary-btn danger-btn-solid" data-id="{{ produto.id }}">
                         Remover Produto
@@ -76,6 +93,12 @@ data-preco="{{ produto.preco }}"
 <h2>Editar Produto</h2>
 <input type="hidden" id="modal-produto-id">
 <input type="text" id="modal-nome" placeholder="Nome do produto">
+<textarea id="modal-descricao" placeholder="Descrição do produto"></textarea>
+<input type="text" id="modal-categoria" placeholder="Categoria">
+<input
+    type="text"
+    id="modal-tag"
+    placeholder="Tags (separadas por vírgula)">
 <input type="number" id="modal-quantidade" placeholder="Quantidade em estoque" min="0">
 <input type="number" id="modal-preco" placeholder="Preço" min="0" step="0.01">
 <div class="modal-actions">

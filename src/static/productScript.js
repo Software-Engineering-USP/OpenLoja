@@ -22,6 +22,9 @@ document.getElementById("modal-cancel").addEventListener("click", () => {
 document.getElementById("modal-save").addEventListener("click", async () => {
   const dados = {
     nome: modalNome.value,
+    descricao: modalDescricao.value,
+    categoria: modalCategoria.value,
+    tag: modalTag.value,
     quantidade_em_estoque: Number(modalQuantidade.value),
     preco: Number(modalPreco.value),
   };

@@ -43,7 +43,13 @@
                 <tbody>
                     <!-- BACKEND LOOP (Jinja2) -->
                     {% for produto in produtos %}
-                    <tr data-id="{{ produto.id }}" data-nome="{{ produto.nome|lower }}">
+                        <tr
+                            data-id="{{ produto.id }}"
+                            data-nome="{{ produto.nome|lower }}"
+                            data-descricao="{{ produto.descricao }}"
+                            data-categoria="{{ produto.categoria }}"
+                            data-tag="{{ produto.tag }}"
+                        >
                         <td class="product-cell">
                             <span class="product-name">{{ produto.nome }}</span>
                         </td>
@@ -80,6 +86,12 @@
             <h2 id="modal-title">Adicionar Produto</h2>
             <input type="hidden" id="modal-produto-id">
             <input type="text" id="modal-nome" placeholder="Nome do produto">
+            <textarea id="modal-descricao" placeholder="Descrição do produto"></textarea>
+            <input type="text" id="modal-categoria" placeholder="Categoria">
+            <input
+                type="text"
+                id="modal-tag"
+                placeholder="Tags (separadas por vírgula)">
             <input type="number" id="modal-quantidade" placeholder="Quantidade em estoque" min="0">
             <input type="number" id="modal-preco" placeholder="Preço" min="0" step="0.01">
             <label for="modal-imagem">Imagem do produto</label>

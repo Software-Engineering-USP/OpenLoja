@@ -14,19 +14,33 @@ const modal = document.getElementById("product-modal");
 const modalTitle = document.getElementById("modal-title");
 const modalId = document.getElementById("modal-produto-id");
 const modalNome = document.getElementById("modal-nome");
+const modalDescricao = document.getElementById("modal-descricao");
+const modalCategoria = document.getElementById("modal-categoria");
+const modalTag = document.getElementById("modal-tag");
 const modalQuantidade = document.getElementById("modal-quantidade");
 const modalPreco = document.getElementById("modal-preco");
 const inputImagem = document.getElementById("modal-imagem");
 const preview = document.getElementById("modal-preview");
 
-function abrirModal({ id = "", nome = "", quantidade = "", preco = "" } = {}) {
+function abrirModal({
+    id = "",
+    nome = "",
+    descricao = "",
+    categoria = "",
+    tag = "",
+    quantidade = "",
+    preco = ""
+} = {}) {
     modalTitle.textContent = id ? "Editar Produto" : "Adicionar Produto";
 
     modalId.value = id;
     modalNome.value = nome;
     modalQuantidade.value = quantidade;
     modalPreco.value = preco;
-
+    modalDescricao.value = descricao;
+    modalCategoria.value = categoria;
+    modalTag.value = tag;
+    
     inputImagem.value = "";
     preview.style.display = "none";
     preview.src = "";
@@ -47,10 +61,13 @@ document.querySelectorAll(".edit-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const linha = btn.closest("tr");
     abrirModal({
-      id: btn.dataset.id,
-      nome: linha.querySelector(".product-name").textContent,
-      quantidade: linha.children[1].textContent.trim(),
-      preco: linha.children[2].textContent.replace("$", "").trim(),
+    id: btn.dataset.id,
+    nome: linha.querySelector(".product-name").textContent,
+    descricao: linha.dataset.descricao,
+    categoria: linha.dataset.categoria,
+    tag: linha.dataset.tag,
+    quantidade: linha.children[1].textContent.trim(),
+    preco: linha.children[2].textContent.replace("$", "").trim(),
     });
   });
 });
@@ -58,6 +75,9 @@ document.querySelectorAll(".edit-btn").forEach((btn) => {
 document.getElementById("modal-save").addEventListener("click", async () => {
     const dados = {
         nome: modalNome.value,
+        descricao: modalDescricao.value,
+        categoria: modalCategoria.value,
+        tag: modalTag.value,
         quantidade_em_estoque: Number(modalQuantidade.value),
         preco: Number(modalPreco.value),
     };

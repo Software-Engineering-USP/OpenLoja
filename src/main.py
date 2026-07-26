@@ -235,15 +235,22 @@ def home_cliente(
     with Session(engine) as session:
         produtos = session.exec(select(Produto)).all()
 
+        tags = set()
+
+        for produto in produtos:
+            if produto.tag:
+                for tag in produto.tag.split(","):
+                    tags.add(tag.strip())
+
     return templates.TemplateResponse(
         request=request,
         name="frontpage.html",
         context={
             "usuario": user,
             "produtos": produtos,
+            "tags": sorted(tags),
         },
     )
-
 
 # rota de estoque do dono da loja
 @app.get("/stock")
