@@ -207,10 +207,12 @@ checkoutBtn.addEventListener("click", async function () {
 // Função para adicionar produtos no carrinho
 document.addEventListener("click", async function (e) {
   const botao = e.target.closest(".buy-btn");
+
   if (!botao) return;
 
   const produtoId = botao.dataset.id;
-  const quantidade = Number(document.getElementById("quantidade")?.value) || 1;
+  const quantidadeId = document.getElementById("quantidade");
+  const quantidade = Number(quantidadeId?.value) || 1;
 
   if (usuarioLogado) {
     await fetch(
@@ -222,7 +224,12 @@ document.addEventListener("click", async function (e) {
 
     await carregarCarrinho();
   } else {
-    adicionarCarrinhoLocal(botao);
+      adicionarCarrinhoLocal(botao);
+      await carregarCarrinho();
+  }
+
+  if (quantidadeId) {
+      quantidadeId.value = 1;
   }
 });
 
@@ -232,23 +239,17 @@ function adicionarCarrinhoLocal(botao) {
 
   const produto = {
     id: Number(botao.dataset.id),
-    nome: card.querySelector(".product-title").textContent,
-    preco: Number(
-      card
-        .querySelector(".product-price")
-        .textContent.replace("R$", "")
-        .replace(",", ".")
-        .trim(),
-    ),
-    imagem: card.querySelector("img").src,
-    quantidade: 1,
+    nome: botao.dataset.nome,
+    preco: Number(botao.dataset.preco),
+    imagem: botao.dataset.imagem,
+    quantidade: Number(document.getElementById("quantidade")?.value) || 1
   };
 
   let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
   const existente = carrinho.find((p) => p.id == produto.id);
 
   if (existente) {
-    existente.quantidade++;
+    existente.quantidade += produto.quantidade;
   } else {
     carrinho.push(produto);
   }
@@ -256,7 +257,7 @@ function adicionarCarrinhoLocal(botao) {
   localStorage.setItem("carrinho", JSON.stringify(carrinho));
 
   const quantidade = carrinho.reduce((soma, item) => soma + item.quantidade, 0);
-  atualizarCarrinho(quantidade);
+    atualizarCarrinho(quantidade);
 }
 
 window.addEventListener("DOMContentLoaded", async () => {

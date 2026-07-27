@@ -123,7 +123,7 @@ async function abrirProduto(id){
             <div class="product-detail-image">
 
                 <img 
-                    src="/static/${produto.imagem}"
+                    src="${produto.imagem}"
                     alt="${produto.nome}"
                 >
 
