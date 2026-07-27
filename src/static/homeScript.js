@@ -76,7 +76,7 @@ async function sincronizarCarrinho() {
     const response = await fetch("/carrinho/sincronizar", {
 	method: "POST",
 	headers: {"Content-Type": "application/json"},
-	body: JSON.stringy(itens)
+	body: JSON.stringify(itens)
     });
 
     if(response.ok){

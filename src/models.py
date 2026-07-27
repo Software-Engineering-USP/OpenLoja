@@ -47,6 +47,9 @@ class Produto(SQLModel, table=True):
     nome: str
     preco: int
 
+    descricao: str = Field(default="")
+    categoria: str = Field(default="")
+    tag: str = Field(default="")
     imagem: str | None = Field(default=None)
 
     avaliacoes: List["Avaliacao"] = Relationship(back_populates="produto")

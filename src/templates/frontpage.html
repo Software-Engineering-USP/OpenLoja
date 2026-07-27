@@ -67,10 +67,15 @@
 
                 <!-- Filtros por Tags/Categorias -->
                 <div class="tag-filters">
-                    <button class="tag-btn active" data-tag="all">Todos</button>
-                    <button class="tag-btn" data-tag="roupas">Tipo 1</button>
-                    <button class="tag-btn" data-tag="calcados">Tipo 2</button>
-                    <button class="tag-btn" data-tag="acessorios">Tipo 3</button>
+                    <button class="tag-btn active" data-tag="all">
+                        Todos
+                    </button>
+
+                    {% for tag in tags %}
+                    <button class="tag-btn" data-tag="{{ tag|lower }}">
+                        {{ tag }}
+                    </button>
+                    {% endfor %}
                 </div>
             </div>
 
@@ -79,7 +84,12 @@
               <div class="product-grid" id="product-grid">
 
                 {% for produto in produtos %}
-                <article class="product-card" data-tags="{{ produto.tag }}">
+                <article
+                    class="product-card"
+                    data-tag="{{ produto.tag|lower }}"
+                    data-categoria="{{ produto.categoria|lower }}"
+                    data-descricao="{{ produto.descricao|lower }}"
+                >
                   <a 
 		    href="#"
 		    class="product-image"

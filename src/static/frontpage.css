@@ -381,6 +381,172 @@ body {
   grid-column: 1 / -1; /* Ocupa a largura inteira do grid */
 }
 
+/* ================= PRODUTO ================= */
+
+#product-view{
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+#voltar-catalogo{
+    background: none;
+    border: none;
+    color: #444;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 30px;
+    padding: 8px 0;
+}
+
+#voltar-catalogo:hover{
+    color: #0d6efd;
+}
+
+
+/* Layout principal */
+.product-detail{
+    display: flex;
+    gap: 70px;
+    align-items: flex-start;
+}
+
+
+/* Imagem */
+.product-detail-image{
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 18px;
+}
+
+.product-detail-image img{
+    width: 100%;
+    max-width: 450px;
+    height: 450px;
+    border-radius: 14px;
+    object-fit: contain;
+}
+
+
+/* Informações */
+.product-detail-info{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+
+.product-detail-info h1{
+    font-size: 2.2rem;
+    margin: 0;
+    color: #111827;
+}
+
+
+/* Preço */
+.product-detail-price{
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0d6efd;
+    margin: 0;
+
+    padding-bottom: 18px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+
+/* Categoria e tags */
+.product-detail-category,
+.product-detail-tag{
+    width: fit-content;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    padding: 8px 14px;
+    border-radius: 20px;
+
+    margin: 0;
+}
+
+
+.product-detail-category{
+    color: #374151;
+    background: #f3f4f6;
+}
+
+
+.product-detail-tag{
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+
+/* Descrição */
+.product-detail-description{
+    margin: 10px 0;
+    padding: 18px;
+
+    background: #fafafa;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+
+    color: #4b5563;
+    line-height: 1.7;
+    font-size: 1rem;
+
+    max-width: 500px;
+}
+
+
+/* Quantidade */
+.product-detail-info label{
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+
+.product-detail-info input{
+    width: 100px;
+
+    padding: 10px;
+
+    font-size: 1rem;
+
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+}
+
+
+/* Botão */
+.product-detail-info .buy-btn{
+    width: 260px;
+
+    padding: 14px;
+
+    font-size: 1rem;
+    font-weight: 700;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #0d6efd;
+    color: white;
+
+    cursor: pointer;
+    transition: .2s;
+}
+
+
+.product-detail-info .buy-btn:hover{
+    background: #0b5ed7;
+    transform: translateY(-2px);
+}
+
 /* ==========================================================================
    5. Consultas de Mídia (Responsividade)
    ========================================================================== */
