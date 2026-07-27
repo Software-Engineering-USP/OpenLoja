@@ -29,16 +29,16 @@
         <div class="dashboard-grid">
             <a class="card card-link" href="/statistics">
                 <h2>Receita Mensal</h2>
-                <div class="value">XX</div>
+                <div class="value">{{ receita_mensal_fmt }}</div>
                 <small>Receita gerada este mês</small>
             </a>
             <a class="card card-link" href="/stock">
                 <h2>Itens em Estoque</h2>
-                <div class="value">XX</div>
+                <div class="value">{{ itens_em_estoque }}</div>
             </a>
             <a class="card card-link" href="/stock">
                 <h2>Valor do Estoque</h2>
-                <div class="value">XX</div>
+                <div class="value">{{ valor_em_estoque_fmt }}</div>
             </a>
         </div>
 
@@ -47,11 +47,11 @@
                 <h2>Dashboard Mensal</h2>
                 <div class="stat-row">
                     <span>Vendas este mês</span>
-                    <span>XX</span>
+                    <span>{{ vendas_mes }}</span>
                 </div>
                 <div class="stat-row">
                     <span>Novos clientes</span>
-                    <span>XX</span>
+                    <span>{{ novos_clientes }}</span>
                 </div>
                 <a href="/statistics" class="see-more-link">Ver Estatísticas</a>
             </div>
