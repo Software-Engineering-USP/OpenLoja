@@ -25,8 +25,8 @@
         </header>
 
         <div class="toolbar">
-            <input type="text" id="stock-search" placeholder="Search product by name...">
-            <button type="button" id="add-product-btn" class="primary-btn">+ Add Product</button>
+            <input type="text" id="stock-search" placeholder="Procurar produto...">
+            <button type="button" id="add-product-btn" class="primary-btn">+ Adicionar Produto</button>
         </div>
 
         <div class="table-wrapper">
@@ -54,7 +54,7 @@
                             <span class="product-name">{{ produto.nome }}</span>
                         </td>
                         <td>{{ produto.quantidade_em_estoque }}</td>
-                        <td>${{ produto.preco }}</td>
+                        <td>R$ {{ produto.preco }}</td>
                         <td>
                             {% if produto.quantidade_em_estoque == 0 %}
                             <span class="tag tag-danger">Fora de estoque</span>
