@@ -54,7 +54,7 @@
                             <span class="product-name">{{ produto.nome }}</span>
                         </td>
                         <td>{{ produto.quantidade_em_estoque }}</td>
-                        <td>R${{ produto.preco }}</td>
+                        <td>R$ {{ produto.preco }}</td>
                         <td>
                             {% if produto.quantidade_em_estoque == 0 %}
                             <span class="tag tag-danger">Fora de estoque</span>
