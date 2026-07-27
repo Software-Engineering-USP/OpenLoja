@@ -252,6 +252,7 @@ def home_cliente(
         },
     )
 
+
 # rota de estoque do dono da loja
 @app.get("/stock")
 def stock(request: Request, admin: Vendedor = Depends(get_admin)):
@@ -325,8 +326,8 @@ def receita_mensal(admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         reservas = session.exec(
             select(Reserva)
-            .where(Reserva.concluida == True)
-            .where(Reserva.data_conclusao != None)
+            .where(Reserva.concluida)
+            .where(Reserva.data_conclusao is not None)
         ).all()
 
         receita_agrupada = {}
@@ -340,8 +341,18 @@ def receita_mensal(admin: Vendedor = Depends(get_admin)):
         for ano_mes in sorted(receita_agrupada.keys()):
             dt = datetime.strptime(ano_mes, "%Y-%m")
             meses_pt = {
-                1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
-                7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+                1: "Jan",
+                2: "Fev",
+                3: "Mar",
+                4: "Abr",
+                5: "Mai",
+                6: "Jun",
+                7: "Jul",
+                8: "Ago",
+                9: "Set",
+                10: "Out",
+                11: "Nov",
+                12: "Dez",
             }
             label_br = f"{meses_pt[dt.month]}/{dt.year}"
             labels.append(label_br)
@@ -364,10 +375,10 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
         reservas = session.exec(select(Reserva)).all()
         estatisticas["vendas_mes"] = len(reservas)
 
-        produtos_por_id = {p.id: p for p in produtos}
         estatisticas["receita_mensal"] = sum(
             r.valor_efetivo if r.valor_efetivo is not None else r.valor
-            for r in reservas if r.concluida
+            for r in reservas
+            if r.concluida
         )
 
         vendas_por_produto: dict[int, int] = {}
@@ -707,6 +718,16 @@ def deletar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
                 ReservaProdutoLink.reserva_id == reserva_id
             )
         ).all()
+
+        # se a reserva já tinha sido efetivada (estoque já havia sido descontado),
+        # repõe o estoque antes de excluir
+        if reserva.concluida:
+            for link in links:
+                produto = session.get(Produto, link.produto_id)
+                if produto:
+                    produto.quantidade_em_estoque += link.quantidade
+                    session.add(produto)
+
         for link in links:
             session.delete(link)
 
@@ -734,6 +755,32 @@ def concluir_reserva(
 
         if dados.valor_efetivo is not None and dados.valor_efetivo < 0:
             raise HTTPException(400, "Valor efetivo não pode ser negativo")
+
+        links = session.exec(
+            select(ReservaProdutoLink).where(
+                ReservaProdutoLink.reserva_id == reserva_id
+            )
+        ).all()
+
+        # verifica se há estoque suficiente para todos os itens antes de efetivar
+        for link in links:
+            produto = session.get(Produto, link.produto_id)
+            if not produto:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Produto com ID {link.produto_id} não encontrado.",
+                )
+            if produto.quantidade_em_estoque < link.quantidade:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Estoque insuficiente para '{produto.nome}'. Disponível: {produto.quantidade_em_estoque}, Solicitado: {link.quantidade}",
+                )
+
+        # só reduz o estoque agora que a venda está sendo efetivada
+        for link in links:
+            produto = session.get(Produto, link.produto_id)
+            produto.quantidade_em_estoque -= link.quantidade
+            session.add(produto)
 
         reserva.concluida = True
         reserva.valor_efetivo = (
@@ -980,10 +1027,9 @@ def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
         session.commit()
         session.refresh(reserva)
 
+        itens_formatados = []
         for link in links:
             produto = session.get(Produto, link.produto_id)
-            produto.quantidade_em_estoque -= link.quantidade
-            session.add(produto)
 
             session.add(
                 ReservaProdutoLink(
@@ -992,7 +1038,21 @@ def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
                     quantidade=link.quantidade,
                 )
             )
+
+            itens_formatados.append(
+                {
+                    "nome": produto.nome,
+                    "preco": produto.preco,
+                    "quantidade": link.quantidade,
+                }
+            )
+
             session.delete(link)
 
         session.commit()
-        return {"msg": "Compra finalizada com sucesso!", "reserva_id": reserva.id}
+        return {
+            "msg": "Compra finalizada com sucesso!",
+            "reserva_id": reserva.id,
+            "itens": itens_formatados,
+            "total": valor_total,
+        }
