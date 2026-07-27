@@ -54,6 +54,11 @@ def on_startup() -> None:
     create_db()
 
 
+# formata um valor float como real
+def formatar_moeda(valor: float) -> str:
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 # função auxiliar que retorna o usuário logado, se houver, sem exigir autenticação
 def get_optional_user(
     session_user: Annotated[str | None, Cookie()] = None,
@@ -223,7 +228,48 @@ def logar(nome: str, senha: str, response: Response):
 # rota para o acesso à home do lojista
 @app.get("/home")
 def show_profile(request: Request, admin: Vendedor = Depends(get_admin)):
-    return templates.TemplateResponse(request=request, name="homeOwner.html")
+    agora = datetime.now()
+    ano_mes_atual = (agora.year, agora.month)
+
+    with Session(engine) as session:
+        produtos = session.exec(select(Produto)).all()
+        reservas = session.exec(select(Reserva).where(Reserva.concluida)).all()
+
+        itens_em_estoque = sum(p.quantidade_em_estoque for p in produtos)
+        valor_em_estoque = sum(p.preco * p.quantidade_em_estoque for p in produtos)
+
+        receita_mensal = 0.0
+        vendas_mes = 0
+        primeira_compra_por_cliente: dict[int, datetime] = {}
+
+        for r in reservas:
+            if (r.data_conclusao.year, r.data_conclusao.month) == ano_mes_atual:
+                valor = r.valor_efetivo if r.valor_efetivo is not None else r.valor
+                receita_mensal += valor
+                vendas_mes += 1
+
+            data_registrada = primeira_compra_por_cliente.get(r.cliente_id)
+            if data_registrada is None or r.data_conclusao < data_registrada:
+                primeira_compra_por_cliente[r.cliente_id] = r.data_conclusao
+
+        # "novos clientes" = clientes cuja primeira compra concluída foi neste mês
+        novos_clientes = sum(
+            1
+            for data in primeira_compra_por_cliente.values()
+            if (data.year, data.month) == ano_mes_atual
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="homeOwner.html",
+        context={
+            "receita_mensal_fmt": formatar_moeda(receita_mensal),
+            "itens_em_estoque": itens_em_estoque,
+            "valor_em_estoque_fmt": formatar_moeda(valor_em_estoque),
+            "vendas_mes": vendas_mes,
+            "novos_clientes": novos_clientes,
+        },
+    )
 
 
 # rota para o acesso à home do cliente
@@ -372,7 +418,7 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
         produtos = session.exec(select(Produto)).all()
         produto_ids = [p.id for p in produtos]
 
-        reservas = session.exec(select(Reserva)).all()
+        reservas = session.exec(select(Reserva).where(Reserva.concluida)).all()
         estatisticas["vendas_mes"] = len(reservas)
 
         estatisticas["receita_mensal"] = sum(
