@@ -606,3 +606,55 @@ body {
 
     border:0;
 }
+
+/* ==========================================================================
+   6. CSS para Avaliações
+   ========================================================================== */
+
+
+.lista-avaliacoes {
+    margin-top: 20px;
+}
+
+.avaliacao {
+    margin-bottom: 25px;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.nova-avaliacao label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.nova-avaliacao select {
+    padding: 8px;
+}
+
+.nova-avaliacao textarea {
+    display: block;
+    width: 100%;
+    min-height: 100px;
+    padding: 15px;
+    resize: vertical;
+}
+
+.nova-avaliacao button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.avaliacoes {
+    margin-left: 40px;
+    margin-top: 50px;
+    text-align: left;
+}
+
+.nova-avaliacao {
+    margin-top: 40px;
+    padding: 20px 0;
+    max-width: 600px;
+    text-align: left;
+}

@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
+from sqlalchemy.orm import selectinload
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from models import (
     Vendedor,
@@ -29,7 +30,11 @@ from models import (
     ReservaCreate,
     ReservaUpdate,
     ValorEfetivoUpdate,
+<<<<<<< Updated upstream
     Loja
+=======
+    AvaliacaoCreate,
+>>>>>>> Stashed changes
 )
 from datetime import datetime
 import os
@@ -1516,6 +1521,7 @@ def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
             "total": valor_total,
         }
 
+<<<<<<< Updated upstream
 
 # permite rodar o servidor diretamente com "python main.py"
 # (alternativa a "uvicorn main:app --reload")
@@ -1523,3 +1529,70 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="127.0.0.1", port=8000)
+=======
+# rota para obter avaliações:
+@app.get("/produtos/{produto_id}/avaliacoes")
+def listar_avaliacoes(produto_id: int):
+
+    with Session(engine) as session:
+        avaliacoes = session.exec(
+            select(Avaliacao)
+            .where(Avaliacao.produto_id == produto_id)
+            .options(selectinload(Avaliacao.cliente))
+            .order_by(Avaliacao.id.desc())
+        ).all()
+
+    return [
+        {
+            "id": avaliacao.id,
+            "nota": avaliacao.nota,
+            "texto": avaliacao.texto,
+            "dia": avaliacao.dia,
+            "mes": avaliacao.mes,
+            "ano": avaliacao.ano,
+            "horario": avaliacao.horario,
+            "cliente": avaliacao.cliente.nome if avaliacao.cliente else "Cliente",
+        }
+        for avaliacao in avaliacoes
+    ]
+
+# rota para criar avaliações:
+@app.post("/produtos/{produto_id}/avaliacoes")
+def criar_avaliacao(
+    produto_id: int,
+    dados: AvaliacaoCreate,
+    user: Annotated[Cliente, Depends(get_active_user)]
+):
+    with Session(engine) as session:
+
+        produto = session.get(Produto, produto_id)
+
+        if not produto:
+            raise HTTPException(
+                status_code=404,
+                detail="Produto não encontrado."
+            )
+
+        if dados.nota < 0 or dados.nota > 5:
+            raise HTTPException(
+                status_code=400,
+                detail="A nota deve estar entre 0 e 5."
+            )
+
+        avaliacao = Avaliacao(
+            cliente_id=user.id,
+            produto_id=produto_id,
+            nota=dados.nota,
+            texto=dados.texto,
+            dia=datetime.now().day,
+            mes=datetime.now().month,
+            ano=datetime.now().year,
+            horario=datetime.now().hour * 100 + datetime.now().minute
+        )
+
+        session.add(avaliacao)
+        session.commit()
+        session.refresh(avaliacao)
+
+        return avaliacao
+>>>>>>> Stashed changes

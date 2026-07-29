@@ -97,10 +97,49 @@ function voltarCatalogo(){
 async function abrirProduto(id){
 
     const response = await fetch(`/produtos/${id}`);
-
     const produto = await response.json();
 
-    console.log(produto);
+    const avaliacoesResponse = await fetch( `/produtos/${id}/avaliacoes` );
+    const avaliacoes = await avaliacoesResponse.json();
+
+    let avaliacoesHTML = "";
+
+    if (avaliacoes.length === 0) {
+	avaliacoesHTML = `<p>Nenhuma avaliação ainda.</p> `;
+    } else {
+
+	avaliacoesHTML = avaliacoes.map(avaliacao => {
+
+	    const horario = String(avaliacao.horario).padStart(4, "0");
+	    const hora = horario.slice(0, 2);
+	    const minuto = horario.slice(2, 4);
+	    
+	    return `
+
+            <div class="avaliacao">
+                <h3>
+                    ${avaliacao.cliente}
+                </h3>
+
+                <p>
+                    Nota: ${avaliacao.nota}/5
+                </p>
+                
+                <br>
+                <p>
+                    ${avaliacao.texto}
+                </p>
+                <br>
+ 
+                <small>
+                    ${avaliacao.dia}/${avaliacao.mes}/${avaliacao.ano} às ${hora}:${minuto}
+                </small>
+            </div>
+
+        `;
+
+	}).join("");
+    }
 
     document.getElementById("catalog-view")
         .style.display = "none";
@@ -110,7 +149,7 @@ async function abrirProduto(id){
 
     view.style.display = "block";
 
-
+    
     view.innerHTML = `
 
         <button id="voltar-catalogo">
@@ -189,12 +228,90 @@ async function abrirProduto(id){
 
         </section>
 
+        <section class="avaliacoes">
+
+            <h2>Avaliações</h2>
+
+            <div class="lista-avaliacoes">
+                ${avaliacoesHTML}
+            </div>
+
+            <div class="nova-avaliacao">
+
+                <h2>Faça sua Avaliação!</h2>
+
+                <label for="nota">
+                    Nota
+                </label> 
+
+                <select id="nota">
+                    <option value="5">5 - Excelente</option>
+                    <option value="4">4 - Muito bom</option>
+                    <option value="3">3 - Bom</option>
+                    <option value="2">2 - Ruim</option>
+                    <option value="1">1 - Muito ruim</option>
+                    <option value="0">0 - Péssimo</option>
+                </select>
+
+
+                <label for="texto-avaliacao">
+                    Sua avaliação
+                </label>
+
+                <textarea
+                   id="texto-avaliacao"
+                   placeholder="Escreva sua avaliação..."
+                ></textarea>
+
+
+                <button id="enviar-avaliacao">
+                    Enviar avaliação
+                </button>
+            </div>
+
+        </section>
+
     `;
 
 
     document
         .getElementById("voltar-catalogo")
         .onclick = voltarCatalogo;
+
+    document.getElementById("enviar-avaliacao").onclick = async function() {
+
+        const nota = Number(
+            document.getElementById("nota").value
+        );
+
+        const texto =
+            document.getElementById("texto-avaliacao").value;
+
+
+        const response = await fetch(
+            `/produtos/${produto.id}/avaliacoes`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    nota: nota,
+                    texto: texto
+                })
+            }
+        );
+
+
+        if (response.ok) {
+            alert("Avaliação enviada!");
+        } else {
+            const erro = await response.json();
+            alert("Erro ao enviar avaliação.");
+        }
+    }
 
 }
 
