@@ -224,25 +224,23 @@ document.addEventListener("click", async function (e) {
 
     await carregarCarrinho();
   } else {
-      adicionarCarrinhoLocal(botao);
-      await carregarCarrinho();
+    adicionarCarrinhoLocal(botao);
+    await carregarCarrinho();
   }
 
   if (quantidadeId) {
-      quantidadeId.value = 1;
+    quantidadeId.value = 1;
   }
 });
 
 // Função auxiliar para adicionar no carrinho local se o usuário estiver deslogado
 function adicionarCarrinhoLocal(botao) {
-  const card = botao.closest(".product-card");
-
   const produto = {
     id: Number(botao.dataset.id),
     nome: botao.dataset.nome,
     preco: Number(botao.dataset.preco),
     imagem: botao.dataset.imagem,
-    quantidade: Number(document.getElementById("quantidade")?.value) || 1
+    quantidade: Number(document.getElementById("quantidade")?.value) || 1,
   };
 
   let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
@@ -257,7 +255,7 @@ function adicionarCarrinhoLocal(botao) {
   localStorage.setItem("carrinho", JSON.stringify(carrinho));
 
   const quantidade = carrinho.reduce((soma, item) => soma + item.quantidade, 0);
-    atualizarCarrinho(quantidade);
+  atualizarCarrinho(quantidade);
 }
 
 window.addEventListener("DOMContentLoaded", async () => {

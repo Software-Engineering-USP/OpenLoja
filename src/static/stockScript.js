@@ -4,7 +4,7 @@ document.getElementById("stock-search").addEventListener("input", (e) => {
   document
     .querySelectorAll("#stock-table tbody tr[data-nome]")
     .forEach((linha) => {
-      const nome = linha.getAttribute("data-nome");
+      const nome = linha.dataset.nome;
       linha.style.display = nome.includes(termo) ? "" : "none";
     });
 });
@@ -23,29 +23,29 @@ const inputImagem = document.getElementById("modal-imagem");
 const preview = document.getElementById("modal-preview");
 
 function abrirModal({
-    id = "",
-    nome = "",
-    descricao = "",
-    categoria = "",
-    tag = "",
-    quantidade = "",
-    preco = ""
+  id = "",
+  nome = "",
+  descricao = "",
+  categoria = "",
+  tag = "",
+  quantidade = "",
+  preco = "",
 } = {}) {
-    modalTitle.textContent = id ? "Editar Produto" : "Adicionar Produto";
+  modalTitle.textContent = id ? "Editar Produto" : "Adicionar Produto";
 
-    modalId.value = id;
-    modalNome.value = nome;
-    modalQuantidade.value = quantidade;
-    modalPreco.value = preco;
-    modalDescricao.value = descricao;
-    modalCategoria.value = categoria;
-    modalTag.value = tag;
-    
-    inputImagem.value = "";
-    preview.style.display = "none";
-    preview.src = "";
+  modalId.value = id;
+  modalNome.value = nome;
+  modalQuantidade.value = quantidade;
+  modalPreco.value = preco;
+  modalDescricao.value = descricao;
+  modalCategoria.value = categoria;
+  modalTag.value = tag;
 
-    modal.classList.remove("hidden");
+  inputImagem.value = "";
+  preview.style.display = "none";
+  preview.src = "";
+
+  modal.classList.remove("hidden");
 }
 
 function fecharModal() {
@@ -61,71 +61,70 @@ document.querySelectorAll(".edit-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const linha = btn.closest("tr");
     abrirModal({
-    id: btn.dataset.id,
-    nome: linha.querySelector(".product-name").textContent,
-    descricao: linha.dataset.descricao,
-    categoria: linha.dataset.categoria,
-    tag: linha.dataset.tag,
-    quantidade: linha.children[1].textContent.trim(),
-    preco: linha.children[2].textContent.replace("$", "").trim(),
+      id: btn.dataset.id,
+      nome: linha.querySelector(".product-name").textContent,
+      descricao: linha.dataset.descricao,
+      categoria: linha.dataset.categoria,
+      tag: linha.dataset.tag,
+      quantidade: linha.children[1].textContent.trim(),
+      preco: linha.children[2].textContent.replace("$", "").trim(),
     });
   });
 });
 
 document.getElementById("modal-save").addEventListener("click", async () => {
-    const dados = {
-        nome: modalNome.value,
-        descricao: modalDescricao.value,
-        categoria: modalCategoria.value,
-        tag: modalTag.value,
-        quantidade_em_estoque: Number(modalQuantidade.value),
-        preco: Number(modalPreco.value),
-    };
+  const dados = {
+    nome: modalNome.value,
+    descricao: modalDescricao.value,
+    categoria: modalCategoria.value,
+    tag: modalTag.value,
+    quantidade_em_estoque: Number(modalQuantidade.value),
+    preco: Number(modalPreco.value),
+  };
 
-    const resposta = await fetch(
-        modalId.value ? `/produtos/${modalId.value}` : "/produtos",
-        {
-            method: modalId.value ? "PUT" : "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dados)
-        }
-    );
+  const resposta = await fetch(
+    modalId.value ? `/produtos/${modalId.value}` : "/produtos",
+    {
+      method: modalId.value ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dados),
+    },
+  );
 
-    if (!resposta.ok) {
-        alert("Erro ao salvar o produto.");
-        return;
-    }
+  if (!resposta.ok) {
+    alert("Erro ao salvar o produto.");
+    return;
+  }
 
-    const produto = await resposta.json();
+  const produto = await resposta.json();
 
-    
-    const id = modalId.value || produto.id;
+  const id = modalId.value || produto.id;
 
-    if (inputImagem.files.length > 0) {
-        const imagemData = new FormData();
-        imagemData.append("imagem", inputImagem.files[0]);
+  if (inputImagem.files.length > 0) {
+    const imagemData = new FormData();
+    imagemData.append("imagem", inputImagem.files[0]);
 
-        await fetch(`/produtos/${id}/imagem`, {
-            method: "POST",
-            body: imagemData,
-        });
-    }
+    await fetch(`/produtos/${id}/imagem`, {
+      method: "POST",
+      body: imagemData,
+    });
+  }
 
-    window.location.reload();
+  window.location.reload();
 });
 
 inputImagem.addEventListener("change", () => {
-    const arquivo = inputImagem.files[0];
+  const arquivo = inputImagem.files[0];
 
-    if (!arquivo) {
-        preview.style.display = "none";
-        return;
-    }
+  if (!arquivo) {
+    preview.style.display = "none";
+    return;
+  }
 
-    preview.src = URL.createObjectURL(arquivo);
-    preview.style.display = "block";
+  preview.src = URL.createObjectURL(arquivo);
+  preview.style.display = "block";
 });
 
 // ---- Deletar produto ----

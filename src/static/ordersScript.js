@@ -4,7 +4,7 @@ document.getElementById("orders-search").addEventListener("input", (e) => {
   document
     .querySelectorAll("#orders-table tbody tr[data-cliente]")
     .forEach((linha) => {
-      const cliente = linha.getAttribute("data-cliente");
+      const cliente = linha.dataset.cliente;
       linha.style.display = cliente.includes(termo) ? "" : "none";
     });
 });
@@ -188,7 +188,7 @@ document.querySelectorAll(".complete-btn").forEach((btn) => {
     const corpo = {};
     if (entrada.trim() !== "") {
       const numero = Number(entrada.replace(",", "."));
-      if (isNaN(numero) || numero < 0) {
+      if (numero.isNaN || numero < 0) {
         alert("Valor inválido.");
         return;
       }
@@ -218,7 +218,7 @@ document.querySelectorAll(".edit-value-btn").forEach((btn) => {
     if (entrada === null) return; // cancelado
 
     const numero = Number(entrada.replace(",", "."));
-    if (entrada.trim() === "" || isNaN(numero) || numero < 0) {
+    if (entrada.trim() === "" || numero.isNaN || numero < 0) {
       alert("Valor inválido.");
       return;
     }
