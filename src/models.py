@@ -102,6 +102,9 @@ class Avaliacao(SQLModel, table=True):
     nota: int
     texto: str
     dia: int
+    dia: int
+    mes: int
+    ano: int
     horario: int
 
     produto: "Produto" = Relationship(back_populates="avaliacoes")
@@ -127,6 +130,7 @@ class Carrinho(SQLModel, table=True):
     cliente: "Cliente" = Relationship(back_populates="carrinho")
     produtos: List["Produto"] = Relationship(link_model=CarrinhoProdutoLink)
 
+<<<<<<< Updated upstream
 
 class Loja(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -158,3 +162,8 @@ class Loja(SQLModel, table=True):
     horario: str = ""
     trocas: str = ""
     devolucao: str = ""
+=======
+class AvaliacaoCreate(SQLModel):
+    nota: int
+    texto: str
+>>>>>>> Stashed changes
