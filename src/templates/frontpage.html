@@ -29,7 +29,7 @@
 
             <!-- Shop Icons / Utilities -->
             <div class="header-actions">
-	      
+
               <button id="open-login" class="login-btn" onclick="{% if usuario %}window.location.href='/cliente'{% else %}pagina_login(){% endif %}">
                 <i class="far fa-user"></i>
 		{% if usuario %}
@@ -38,7 +38,7 @@
                 <span>Entrar</span>
 		{% endif %}
               </button>
-	      
+
 
               <a href="#wishlist" class="header-action">
                 <i class="far fa-heart"></i>
@@ -90,7 +90,7 @@
                     data-categoria="{{ produto.categoria|lower }}"
                     data-descricao="{{ produto.descricao|lower }}"
                 >
-                  <a 
+                  <a
 		    href="#"
 		    class="product-image"
 		    data-id="{{ produto.id }}"
@@ -102,7 +102,7 @@
 		    {% endif %}
 		  </a>
                   <div class="product-info">
-                    <a 
+                    <a
 		      href="#"
 		      class="product-title-link"
 		      data-id="{{ produto.id }}"
@@ -111,7 +111,14 @@
 		    </a>
                     <p class="product-category">{{ produto.categoria }}</p>
                     <p class="product-price">R$ {{ produto.preco }}</p>
-                    <button class="buy-btn" data-id="{{ produto.id }}">Adicionar ao Carrinho</button>
+                    <button
+                        class="buy-btn"
+                        data-id="{{ produto.id }}"
+                        data-nome="{{ produto.nome }}"
+                        data-preco="{{ produto.preco }}"
+                        data-imagem="/static/{{ produto.imagem }}">
+                        Adicionar ao Carrinho
+                    </button>
                   </div>
                 </article>
                 {% endfor %}
@@ -129,7 +136,7 @@
     </main>
 
 
-    
+
 
     <!-- ==================== MODAL CARRINHO ==================== -->
 

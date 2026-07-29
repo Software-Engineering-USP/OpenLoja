@@ -57,8 +57,9 @@ serializer = URLSafeTimedSerializer(SECRET_KEY, salt="session-cookie")
 # duração máxima de uma sessão, em segundos (7 dias)
 SESSION_MAX_AGE = 60 * 60 * 24 * 7
 
-# constante para evitar duplicação
+# constantes para evitar duplicação
 RESERVE_NOT_FOUND = "Reserva não encontrada"
+CLIENT_NOT_FOUND = "Cliente não encontrado"
 
 # setup do SQL
 arquivo_sqlite = "database.db"
@@ -358,17 +359,21 @@ def home_cliente(
 
 
 # rota para a página pessoal do cliente
-@app.get("/cliente", response_class=HTMLResponse)
+@app.get(
+    "/cliente",
+    response_class=HTMLResponse,
+    responses={404: {"description": CLIENT_NOT_FOUND}},
+)
 def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_user)]):
     with Session(engine) as session:
         cliente = session.get(Cliente, user.id)
         if not cliente:
-            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+            raise HTTPException(status_code=404, detail=CLIENT_NOT_FOUND)
 
         reservas = session.exec(
             select(Reserva).where(Reserva.cliente_id == user.id)
         ).all()
-        
+
         produtos = session.exec(select(Produto)).all()
         links = session.exec(select(ReservaProdutoLink)).all()
 
@@ -406,11 +411,11 @@ def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_u
                     "itens": itens,
                 }
             )
-            
+
             total_pedidos += 1
             if not r.concluida:
                 total_pendentes += 1
-            
+
             if r.concluida:
                 total_gasto += r.valor_efetivo if r.valor_efetivo else r.valor
 
@@ -780,7 +785,7 @@ def criar_reserva(
                 )
             cliente = session.get(Cliente, dados.cliente_id)
             if cliente is None:
-                raise HTTPException(404, "Cliente não encontrado")
+                raise HTTPException(404, CLIENT_NOT_FOUND)
             cliente_id = cliente.id
         else:
             cliente_id = user.id
@@ -867,7 +872,7 @@ def editar_reserva(
         if dados.cliente_id is not None:
             cliente = session.get(Cliente, dados.cliente_id)
             if cliente is None:
-                raise HTTPException(404, "Cliente não encontrado")
+                raise HTTPException(404, CLIENT_NOT_FOUND)
             reserva.cliente_id = dados.cliente_id
 
         if dados.itens is not None:
