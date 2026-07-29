@@ -308,7 +308,6 @@ async function abrirProduto(id){
         if (response.ok) {
             alert("Avaliação enviada!");
         } else {
-            const erro = await response.json();
             alert("Erro ao enviar avaliação.");
         }
     }
