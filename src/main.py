@@ -63,6 +63,7 @@ SESSION_MAX_AGE = 60 * 60 * 24 * 7
 # constantes para evitar duplicação
 RESERVE_NOT_FOUND = "Reserva não encontrada"
 CLIENT_NOT_FOUND = "Cliente não encontrado"
+PRODUCT_NOT_FOUND = "Produto não encontrado"
 STATIC_IMAGES_DIR = "static/images"
 
 # setup do SQL
@@ -749,7 +750,7 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
 # rota de visualização de um produto
 @app.get(
     "/product/{produto_id}",
-    responses={404: {"description": "Produto não encontrado"}},
+    responses={404: {"description": PRODUCT_NOT_FOUND}},
 )
 def product(
     request: Request,
@@ -759,7 +760,7 @@ def product(
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
         if not produto:
-            raise HTTPException(status_code=404, detail="Produto não encontrado")
+            raise HTTPException(status_code=404, detail=PRODUCT_NOT_FOUND)
 
         avaliacoes = session.exec(
             select(Avaliacao).where(Avaliacao.produto_id == produto_id)
@@ -900,14 +901,14 @@ def listar_produtos():
 # rota para buscar por produto especificado pelo ID
 @app.get(
     "/produtos/{produto_id}",
-    responses={404: {"description": "Produto não encontrado"}},
+    responses={404: {"description": PRODUCT_NOT_FOUND}},
 )
 def buscar_produto(produto_id: int):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
         if produto is None:
-            raise HTTPException(404, "Produto não encontrado")
+            raise HTTPException(404, PRODUCT_NOT_FOUND)
 
         return produto
 
@@ -915,7 +916,7 @@ def buscar_produto(produto_id: int):
 # rota para modificação de produto especificado por ID
 @app.put(
     "/produtos/{produto_id}",
-    responses={404: {"description": "Produto não encontrado"}},
+    responses={404: {"description": PRODUCT_NOT_FOUND}},
 )
 def atualizar_produto(
     produto_id: int, dados: Produto, admin: Vendedor = Depends(get_admin)
@@ -924,7 +925,7 @@ def atualizar_produto(
         produto = session.get(Produto, produto_id)
 
         if produto is None:
-            raise HTTPException(404, "Produto não encontrado")
+            raise HTTPException(404, PRODUCT_NOT_FOUND)
 
         produto.sqlmodel_update(dados.model_dump(exclude_unset=True))
 
@@ -937,7 +938,7 @@ def atualizar_produto(
 
 @app.post(
     "/produtos/{produto_id}/imagem",
-    responses={404: {"description": "Produto não encontrado"}},
+    responses={404: {"description": PRODUCT_NOT_FOUND}},
 )
 def enviar_imagem(
     produto_id: int,
@@ -948,7 +949,7 @@ def enviar_imagem(
         produto = session.get(Produto, produto_id)
 
         if produto is None:
-            raise HTTPException(404, "Produto não encontrado")
+            raise HTTPException(404, PRODUCT_NOT_FOUND)
 
         os.makedirs(STATIC_IMAGES_DIR, exist_ok=True)
 
@@ -969,14 +970,14 @@ def enviar_imagem(
 # rota para deleção de produtos no db
 @app.delete(
     "/produtos/{produto_id}",
-    responses={404: {"description": "Produto não encontrado"}},
+    responses={404: {"description": PRODUCT_NOT_FOUND}},
 )
 def deletar_produto(produto_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
 
         if produto is None:
-            raise HTTPException(404, "Produto não encontrado")
+            raise HTTPException(404, PRODUCT_NOT_FOUND)
 
         session.delete(produto)
         session.commit()
@@ -1560,7 +1561,7 @@ def criar_avaliacao(
         if not produto:
             raise HTTPException(
                 status_code=404,
-                detail="Produto não encontrado."
+                detail=PRODUCT_NOT_FOUND
             )
 
         if dados.nota < 0 or dados.nota > 5:
