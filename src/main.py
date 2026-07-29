@@ -198,7 +198,10 @@ async def paginacriar(request: Request):
 
 
 # rota para criação de usuários no database
-@app.post("/criarusuario")
+@app.post(
+    "/criarusuario",
+    responses={404: {"description": "Usuário já existente"}},
+)
 async def criar_usuario(user: Usuario):
     with Session(engine) as session:
         existeVendedor = session.exec(select(Vendedor)).first()
@@ -227,7 +230,10 @@ async def criar_usuario(user: Usuario):
 
 
 # rota para logar com o usuário e setar o cookie
-@app.post("/login")
+@app.post(
+    "/login",
+    responses={404: {"description": "Usuário ou senha incorretos ou inexistente"}},
+)
 def logar(nome: str, senha: str, response: Response):
     with Session(engine) as session:
         vendedor = session.exec(select(Vendedor).where(Vendedor.nome == nome)).first()
@@ -533,7 +539,10 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
 
 
 # rota de visualização de um produto
-@app.get("/product/{produto_id}")
+@app.get(
+    "/product/{produto_id}",
+    responses={404: {"description": "Produto não encontrado"}},
+)
 def product(
     request: Request,
     produto_id: int,
@@ -589,7 +598,10 @@ def listar_produtos():
 
 
 # rota para buscar por produto especificado pelo ID
-@app.get("/produtos/{produto_id}")
+@app.get(
+    "/produtos/{produto_id}",
+    responses={404: {"description": "Produto não encontrado"}},
+)
 def buscar_produto(produto_id: int):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
@@ -601,7 +613,10 @@ def buscar_produto(produto_id: int):
 
 
 # rota para modificação de produto especificado por ID
-@app.put("/produtos/{produto_id}")
+@app.put(
+    "/produtos/{produto_id}",
+    responses={404: {"description": "Produto não encontrado"}},
+)
 def atualizar_produto(
     produto_id: int, dados: Produto, admin: Vendedor = Depends(get_admin)
 ):
@@ -652,7 +667,10 @@ def enviar_imagem(
 
 
 # rota para deleção de produtos no db
-@app.delete("/produtos/{produto_id}")
+@app.delete(
+    "/produtos/{produto_id}",
+    responses={404: {"description": "Produto não encontrado"}},
+)
 def deletar_produto(produto_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         produto = session.get(Produto, produto_id)
@@ -667,7 +685,13 @@ def deletar_produto(produto_id: int, admin: Vendedor = Depends(get_admin)):
 
 
 # rota para criar reserva
-@app.post("/reservas")
+@app.post(
+    "/reservas",
+    responses={
+        404: {"description": "Produto ou cliente não encontrado"},
+        400: {"description": "Reserva inválida"},
+    },
+)
 def criar_reserva(
     dados: ReservaCreate,
     user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
@@ -733,7 +757,10 @@ def listar_reservas(admin: Vendedor = Depends(get_admin)):
 
 
 # rota para buscar uma reserva específica pelo ID
-@app.get("/reservas/{reserva_id}")
+@app.get(
+    "/reservas/{reserva_id}",
+    responses={404: {"description": "Reserva não encontrada"}},
+)
 def buscar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         reserva = session.get(Reserva, reserva_id)
@@ -745,7 +772,13 @@ def buscar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
 
 
 # rota para editar uma reserva (cliente e/ou produtos associados)
-@app.put("/reservas/{reserva_id}")
+@app.put(
+    "/reservas/{reserva_id}",
+    responses={
+        404: {"description": "Reserva, cliente ou produto não encontrado"},
+        400: {"description": "Reserva já concluída ou inválida"},
+    },
+)
 def editar_reserva(
     reserva_id: int, dados: ReservaUpdate, admin: Vendedor = Depends(get_admin)
 ):
@@ -811,7 +844,9 @@ def editar_reserva(
 
 
 # rota para deletar uma reserva
-@app.delete("/reservas/{reserva_id}")
+@app.delete(
+    "/reservas/{reserva_id}", responses={404: {"description": "Reserva não encontrada"}}
+)
 def deletar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         reserva = session.get(Reserva, reserva_id)
@@ -844,7 +879,15 @@ def deletar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
 
 
 # rota para concluir uma reserva
-@app.put("/reservas/{reserva_id}/completar")
+@app.put(
+    "/reservas/{reserva_id}/completar",
+    responses={
+        404: {"description": "Reserva ou produto não encontrados"},
+        400: {
+            "description": "Reserva já concluída, valor efetivo inválido ou produto sem estoque suficiente"
+        },
+    },
+)
 def concluir_reserva(
     reserva_id: int,
     dados: ValorEfetivoUpdate = ValorEfetivoUpdate(),
@@ -901,7 +944,13 @@ def concluir_reserva(
         return reserva
 
 
-@app.put("/reservas/{reserva_id}/valor-efetivo")
+@app.put(
+    "/reservas/{reserva_id}/valor-efetivo",
+    responses={
+        404: {"description": "Reserva não encontrada"},
+        400: {"description": "Reserva não concluída ou valor efetivo inválido"},
+    },
+)
 def editar_valor_efetivo(
     reserva_id: int, dados: ValorEfetivoUpdate, admin: Vendedor = Depends(get_admin)
 ):
@@ -1099,7 +1148,13 @@ def sincronizar_carrinho(
 
 
 # rota para finalizar a compra transformando o carrinho em reserva
-@app.post("/checkout")
+@app.post(
+    "/checkout",
+    responses={
+        404: {"description": "Carrinho ou produto não encontrado"},
+        400: {"description": "Carrinho vazio ou estoque insuficiente"},
+    },
+)
 def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
     with Session(engine) as session:
         carrinho = _get_carrinho_or_404(session, user.id)
