@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from itsdangerous import URLSafeTimedSerializer, BadSignature
 from models import (
     Vendedor,
     Cliente,
@@ -85,7 +85,7 @@ def ler_sessao(session: str | None) -> dict | None:
 
     try:
         dados = serializer.loads(session, max_age=SESSION_MAX_AGE)
-    except (BadSignature, SignatureExpired):
+    except BadSignature:
         return None
 
     if not isinstance(dados, dict) or "nome" not in dados or "tipo" not in dados:
