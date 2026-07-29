@@ -197,3 +197,29 @@ async function abrirProduto(id){
         .onclick = voltarCatalogo;
 
 }
+
+// implementação de filtragem por tags
+const tagButtons = document.querySelectorAll(".tag-btn");
+const products = document.querySelectorAll(".product-card");
+
+tagButtons.forEach(button => {
+    button.addEventListener("click", () => {
+
+        tagButtons.forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+
+        const selectedTag = button.dataset.tag;
+
+        products.forEach(product => {
+	    const productTags = product.dataset.tag.split(",").map(tag => tag.trim().toLowerCase());
+	    if (selectedTag === "all" || productTags.includes(selectedTag)) {
+		product.style.display = "";
+	    } else {
+		product.style.display = "none";
+	    }
+
+        });
+
+    });
+
+});
