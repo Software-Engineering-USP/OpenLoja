@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minha Conta</title>
+    <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
+    <link rel="stylesheet" href="../static/clientStyle.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div class="brand-info">
+                    <h1>Minha Conta</h1>
+                    <p>Bem-vindo, {{ cliente.nome }}</p>
+                </div>
+            </div>
+            <nav class="action-buttons">
+                <a href="/homeCliente">Loja</a>
+                <a href="#" onclick="logout(event)">Sair</a>
+            </nav>
+        </header>
+
+        <!-- Cards de resumo -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Pedidos</h2>
+                <div class="value">{{ total_pedidos }}</div>
+                <small>pedidos realizados</small>
+            </div>
+            <div class="card">
+                <h2>Pendentes</h2>
+                <div class="value">{{ total_pendentes }}</div>
+                <small>aguardando conclusão</small>
+            </div>
+            <div class="card">
+                <h2>Total Gasto</h2>
+                <div class="value">R$ {{ "%.2f"|format(total_gasto) }}</div>
+                <small>em compras concluídas</small>
+            </div>
+        </div>
+
+        <!-- Tabela de pedidos do cliente -->
+        <div class="panel">
+            <h2>Meus Pedidos</h2>
+
+            <div class="toolbar">
+                <input type="text" id="pedidos-search" placeholder="Buscar por produto...">
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table" id="pedidos-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Produtos</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- BACKEND LOOP (Jinja2) -->
+                        {% for r in reservas %}
+                        <tr data-id="{{ r.id }}">
+                            <td>{{ r.id }}</td>
+                            <td>
+                                {% if r.itens %}
+                                {% for item in r.itens %}{{ item.nome }} ({{ item.quantidade }}x){% if not loop.last %}, {% endif %}{% endfor %}
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.valor_efetivo is not none %}
+                                R$ {{ "%.2f"|format(r.valor_efetivo) }}
+                                {% else %}
+                                R$ {{ "%.2f"|format(r.valor) }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.concluida %}
+                                <span class="tag tag-ok">Concluída</span>
+                                {% else %}
+                                <span class="tag tag-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="empty-row">Nenhum pedido realizado ainda.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="../static/clientScript.js"></script>
+</body>
+</html>
