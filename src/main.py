@@ -357,6 +357,76 @@ def home_cliente(
     )
 
 
+# rota para a página pessoal do cliente
+@app.get("/cliente", response_class=HTMLResponse)
+def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_user)]):
+    with Session(engine) as session:
+        cliente = session.get(Cliente, user.id)
+        if not cliente:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+
+        reservas = session.exec(
+            select(Reserva).where(Reserva.cliente_id == user.id)
+        ).all()
+        
+        produtos = session.exec(select(Produto)).all()
+        links = session.exec(select(ReservaProdutoLink)).all()
+
+        produtos_por_id = {p.id: p for p in produtos}
+        links_por_reserva: dict[int, list[ReservaProdutoLink]] = {}
+        for link in links:
+            links_por_reserva.setdefault(link.reserva_id, []).append(link)
+
+        reservas_view = []
+        total_pedidos = 0
+        total_pendentes = 0
+        total_gasto = 0.0
+
+        for r in reservas:
+            itens = []
+            for link in links_por_reserva.get(r.id, []):
+                produto = produtos_por_id.get(link.produto_id)
+                if produto:
+                    itens.append(
+                        {
+                            "produto_id": produto.id,
+                            "nome": produto.nome,
+                            "quantidade": link.quantidade,
+                            "preco": produto.preco,
+                        }
+                    )
+
+            reservas_view.append(
+                {
+                    "id": r.id,
+                    "valor": r.valor,
+                    "concluida": r.concluida,
+                    "valor_efetivo": r.valor_efetivo,
+                    "data_conclusao": r.data_conclusao,
+                    "itens": itens,
+                }
+            )
+            
+            total_pedidos += 1
+            if not r.concluida:
+                total_pendentes += 1
+            
+            if r.concluida:
+                total_gasto += r.valor_efetivo if r.valor_efetivo else r.valor
+
+    return templates.TemplateResponse(
+        request=request,
+        name="clientPage.html",
+        context={
+            "cliente": cliente,
+            "reservas": reservas_view,
+            "total_pedidos": total_pedidos,
+            "total_pendentes": total_pendentes,
+            "total_gasto": total_gasto,
+        },
+    )
+
+
 # rota de estoque do dono da loja
 @app.get("/stock")
 def stock(request: Request, admin: Vendedor = Depends(get_admin)):
