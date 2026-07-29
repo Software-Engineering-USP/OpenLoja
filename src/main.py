@@ -57,6 +57,9 @@ serializer = URLSafeTimedSerializer(SECRET_KEY, salt="session-cookie")
 # duração máxima de uma sessão, em segundos (7 dias)
 SESSION_MAX_AGE = 60 * 60 * 24 * 7
 
+# constante para evitar duplicação
+RESERVE_NOT_FOUND = "Reserva não encontrada"
+
 # setup do SQL
 arquivo_sqlite = "database.db"
 url_sqlite = f"sqlite:///{arquivo_sqlite}"
@@ -759,14 +762,14 @@ def listar_reservas(admin: Vendedor = Depends(get_admin)):
 # rota para buscar uma reserva específica pelo ID
 @app.get(
     "/reservas/{reserva_id}",
-    responses={404: {"description": "Reserva não encontrada"}},
+    responses={404: {"description": RESERVE_NOT_FOUND}},
 )
 def buscar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         reserva = session.get(Reserva, reserva_id)
 
         if reserva is None:
-            raise HTTPException(404, "Reserva não encontrada")
+            raise HTTPException(404, RESERVE_NOT_FOUND)
 
         return reserva
 
@@ -786,7 +789,7 @@ def editar_reserva(
         reserva = session.get(Reserva, reserva_id)
 
         if reserva is None:
-            raise HTTPException(404, "Reserva não encontrada")
+            raise HTTPException(404, RESERVE_NOT_FOUND)
 
         if reserva.concluida:
             raise HTTPException(400, "Reserva já concluída não pode ser editada")
@@ -845,14 +848,14 @@ def editar_reserva(
 
 # rota para deletar uma reserva
 @app.delete(
-    "/reservas/{reserva_id}", responses={404: {"description": "Reserva não encontrada"}}
+    "/reservas/{reserva_id}", responses={404: {"description": RESERVE_NOT_FOUND}}
 )
 def deletar_reserva(reserva_id: int, admin: Vendedor = Depends(get_admin)):
     with Session(engine) as session:
         reserva = session.get(Reserva, reserva_id)
 
         if reserva is None:
-            raise HTTPException(404, "Reserva não encontrada")
+            raise HTTPException(404, RESERVE_NOT_FOUND)
 
         links = session.exec(
             select(ReservaProdutoLink).where(
@@ -897,7 +900,7 @@ def concluir_reserva(
         reserva = session.get(Reserva, reserva_id)
 
         if reserva is None:
-            raise HTTPException(404, "Reserva não encontrada")
+            raise HTTPException(404, RESERVE_NOT_FOUND)
 
         if reserva.concluida:
             raise HTTPException(400, "Reserva já está concluída")
@@ -947,7 +950,7 @@ def concluir_reserva(
 @app.put(
     "/reservas/{reserva_id}/valor-efetivo",
     responses={
-        404: {"description": "Reserva não encontrada"},
+        404: {"description": RESERVE_NOT_FOUND},
         400: {"description": "Reserva não concluída ou valor efetivo inválido"},
     },
 )
@@ -964,7 +967,7 @@ def editar_valor_efetivo(
         reserva = session.get(Reserva, reserva_id)
 
         if reserva is None:
-            raise HTTPException(404, "Reserva não encontrada")
+            raise HTTPException(404, RESERVE_NOT_FOUND)
 
         if not reserva.concluida:
             raise HTTPException(
