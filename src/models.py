@@ -130,8 +130,7 @@ class Carrinho(SQLModel, table=True):
     cliente: "Cliente" = Relationship(back_populates="carrinho")
     produtos: List["Produto"] = Relationship(link_model=CarrinhoProdutoLink)
 
-<<<<<<< Updated upstream
-
+    
 class Loja(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
@@ -162,8 +161,7 @@ class Loja(SQLModel, table=True):
     horario: str = ""
     trocas: str = ""
     devolucao: str = ""
-=======
+
 class AvaliacaoCreate(SQLModel):
     nota: int
     texto: str
->>>>>>> Stashed changes

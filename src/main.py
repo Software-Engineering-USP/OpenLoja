@@ -30,11 +30,8 @@ from models import (
     ReservaCreate,
     ReservaUpdate,
     ValorEfetivoUpdate,
-<<<<<<< Updated upstream
-    Loja
-=======
+    Loja,
     AvaliacaoCreate,
->>>>>>> Stashed changes
 )
 from datetime import datetime
 import os
@@ -1521,15 +1518,8 @@ def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
             "total": valor_total,
         }
 
-<<<<<<< Updated upstream
 
-# permite rodar o servidor diretamente com "python main.py"
-# (alternativa a "uvicorn main:app --reload")
-if __name__ == "__main__":
-    import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
-=======
 # rota para obter avaliações:
 @app.get("/produtos/{produto_id}/avaliacoes")
 def listar_avaliacoes(produto_id: int):
@@ -1595,4 +1585,10 @@ def criar_avaliacao(
         session.refresh(avaliacao)
 
         return avaliacao
->>>>>>> Stashed changes
+
+# permite rodar o servidor diretamente com "python main.py"
+# (alternativa a "uvicorn main:app --reload")
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)
