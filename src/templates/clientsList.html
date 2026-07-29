@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ loja_atual().nome }} · Clientes</title>
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
+    <link rel="stylesheet" href="../static/ordersStyle.css">
+</head>
+<body>
+{% set loja = loja_atual() %}
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">{{ loja.nome[0]|upper if loja.nome else "S" }}</div>
+                <div class="brand-info">
+                    <h1>Clientes</h1>
+                    <p>Todos os clientes cadastrados na loja.</p>
+                </div>
+            </div>
+            <nav class="action-buttons">
+                <a href="/home">Home</a>
+                <a href="/stock">Estoque</a>
+                <a href="/orders">Pedidos</a>
+                <a href="/statistics">Estatísticas</a>
+                <a href="/settings">Configurações</a>
+            </nav>
+        </header>
+
+        <div class="toolbar">
+            <input type="text" id="clientes-search" placeholder="Buscar por nome do cliente...">
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="clientes-table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Pedidos</th>
+                        <th>Total Gasto</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clientes %}
+                    <tr data-nome="{{ c.nome|lower }}">
+                        <td class="product-cell">
+                            <span class="product-name">{{ c.nome }}</span>
+                        </td>
+                        <td>{{ c.pedidos }}</td>
+                        <td>R$ {{ "%.2f"|format(c.total_gasto) }}</td>
+                        <td class="actions-cell">
+                            <a class="icon-btn" href="/clientes/{{ c.id }}">Ver perfil</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="empty-row">Nenhum cliente cadastrado ainda.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const busca = document.getElementById("clientes-search");
+        const linhas = document.querySelectorAll("#clientes-table tbody tr[data-nome]");
+
+        busca.addEventListener("input", () => {
+            const termo = busca.value.trim().toLowerCase();
+            linhas.forEach((linha) => {
+                const nome = linha.dataset.nome;
+                linha.style.display = nome.includes(termo) ? "" : "none";
+            });
+        });
+    </script>
+</body>
+</html>

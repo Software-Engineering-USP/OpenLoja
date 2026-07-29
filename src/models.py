@@ -126,3 +126,35 @@ class Carrinho(SQLModel, table=True):
 
     cliente: "Cliente" = Relationship(back_populates="carrinho")
     produtos: List["Produto"] = Relationship(link_model=CarrinhoProdutoLink)
+
+
+class Loja(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+
+    # Identidade
+    nome: str = "Minha Loja"
+    slogan: str = ""
+    descricao: str = ""
+
+    # Aparência
+    logo: str | None = None
+    banner: str | None = None
+
+    cor_primaria: str = "#232978"
+    cor_secundaria: str = "#0d6efd"
+    cor_destaque: str = "#f59e0b"
+
+    # Contato
+    email: str = ""
+    telefone: str = ""
+    whatsapp: str = ""
+    endereco: str = ""
+
+    # Redes sociais
+    instagram: str = ""
+    facebook: str = ""
+
+    # Informações
+    horario: str = ""
+    trocas: str = ""
+    devolucao: str = ""

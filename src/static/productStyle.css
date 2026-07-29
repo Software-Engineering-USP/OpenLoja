@@ -7,7 +7,7 @@
 }
 
 .back-link {
-  color: #1d4ed8;
+  color: var(--cor-secundaria, #1d4ed8);
   font-weight: 600;
   text-decoration: none;
   font-size: 14px;
@@ -32,7 +32,7 @@
   text-decoration: none;
 }
 .breadcrumb a:hover {
-  color: #1d4ed8;
+  color: var(--cor-secundaria, #1d4ed8);
 }
 
 .product-detail {
@@ -78,18 +78,18 @@
   margin-bottom: 18px;
 }
 .loja-link a {
-  color: #232978;
+  color: var(--cor-primaria, #232978);
   font-weight: 600;
   text-decoration: none;
 }
 .loja-link a:hover {
-  color: #3b82f6;
+  color: var(--cor-secundaria, #3b82f6);
 }
 
 .product-detail-price {
   font-size: 30px;
   font-weight: 800;
-  color: #232978;
+  color: var(--cor-primaria, #232978);
   margin: 18px 0 10px;
 }
 
@@ -140,7 +140,7 @@
   margin-bottom: 6px;
 }
 .review-stars {
-  color: #f59e0b;
+  color: var(--cor-destaque, #f59e0b);
   letter-spacing: 2px;
 }
 .review-date {
@@ -175,7 +175,7 @@
   padding: 6px 12px;
   border-radius: 999px;
   background: #eef2ff;
-  color: #232978;
+  color: var(--cor-primaria, #232978);
   font-size: 13px;
   font-weight: 600;
 }

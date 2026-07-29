@@ -29,6 +29,7 @@ from models import (
     ReservaCreate,
     ReservaUpdate,
     ValorEfetivoUpdate,
+    Loja
 )
 from datetime import datetime
 import os
@@ -69,6 +70,10 @@ engine = create_engine(url_sqlite)
 
 def create_db():
     SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        if session.exec(select(Loja)).first() is None:
+            session.add(Loja())
+            session.commit()
 
 
 @app.on_event("startup")
@@ -339,6 +344,7 @@ def home_cliente(
 ):
     with Session(engine) as session:
         produtos = session.exec(select(Produto)).all()
+        loja = session.exec(select(Loja)).first()
 
         tags = set()
 
@@ -354,8 +360,70 @@ def home_cliente(
             "usuario": user,
             "produtos": produtos,
             "tags": sorted(tags),
+            "loja": loja,
         },
     )
+
+
+# monta a visão (lista de pedidos + resumo) de um cliente, reaproveitada
+# tanto na página "Minha Conta" do próprio cliente quanto no perfil que
+# o vendedor vê em /clientes/{id}
+def montar_historico_cliente(session: Session, cliente_id: int) -> dict:
+    reservas = session.exec(
+        select(Reserva).where(Reserva.cliente_id == cliente_id)
+    ).all()
+
+    produtos = session.exec(select(Produto)).all()
+    links = session.exec(select(ReservaProdutoLink)).all()
+
+    produtos_por_id = {p.id: p for p in produtos}
+    links_por_reserva: dict[int, list[ReservaProdutoLink]] = {}
+    for link in links:
+        links_por_reserva.setdefault(link.reserva_id, []).append(link)
+
+    reservas_view = []
+    total_pedidos = 0
+    total_pendentes = 0
+    total_gasto = 0.0
+
+    for r in sorted(reservas, key=lambda r: r.id, reverse=True):
+        itens = []
+        for link in links_por_reserva.get(r.id, []):
+            produto = produtos_por_id.get(link.produto_id)
+            if produto:
+                itens.append(
+                    {
+                        "produto_id": produto.id,
+                        "nome": produto.nome,
+                        "quantidade": link.quantidade,
+                        "preco": produto.preco,
+                    }
+                )
+
+        reservas_view.append(
+            {
+                "id": r.id,
+                "valor": r.valor,
+                "concluida": r.concluida,
+                "valor_efetivo": r.valor_efetivo,
+                "data_conclusao": r.data_conclusao,
+                "itens": itens,
+            }
+        )
+
+        total_pedidos += 1
+        if not r.concluida:
+            total_pendentes += 1
+
+        if r.concluida:
+            total_gasto += r.valor_efetivo if r.valor_efetivo else r.valor
+
+    return {
+        "reservas": reservas_view,
+        "total_pedidos": total_pedidos,
+        "total_pendentes": total_pendentes,
+        "total_gasto": total_gasto,
+    }
 
 
 # rota para a página pessoal do cliente
@@ -370,64 +438,81 @@ def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_u
         if not cliente:
             raise HTTPException(status_code=404, detail=CLIENT_NOT_FOUND)
 
-        reservas = session.exec(
-            select(Reserva).where(Reserva.cliente_id == user.id)
-        ).all()
-
-        produtos = session.exec(select(Produto)).all()
-        links = session.exec(select(ReservaProdutoLink)).all()
-
-        produtos_por_id = {p.id: p for p in produtos}
-        links_por_reserva: dict[int, list[ReservaProdutoLink]] = {}
-        for link in links:
-            links_por_reserva.setdefault(link.reserva_id, []).append(link)
-
-        reservas_view = []
-        total_pedidos = 0
-        total_pendentes = 0
-        total_gasto = 0.0
-
-        for r in reservas:
-            itens = []
-            for link in links_por_reserva.get(r.id, []):
-                produto = produtos_por_id.get(link.produto_id)
-                if produto:
-                    itens.append(
-                        {
-                            "produto_id": produto.id,
-                            "nome": produto.nome,
-                            "quantidade": link.quantidade,
-                            "preco": produto.preco,
-                        }
-                    )
-
-            reservas_view.append(
-                {
-                    "id": r.id,
-                    "valor": r.valor,
-                    "concluida": r.concluida,
-                    "valor_efetivo": r.valor_efetivo,
-                    "data_conclusao": r.data_conclusao,
-                    "itens": itens,
-                }
-            )
-
-            total_pedidos += 1
-            if not r.concluida:
-                total_pendentes += 1
-
-            if r.concluida:
-                total_gasto += r.valor_efetivo if r.valor_efetivo else r.valor
+        historico = montar_historico_cliente(session, user.id)
 
     return templates.TemplateResponse(
         request=request,
         name="clientPage.html",
         context={
             "cliente": cliente,
-            "reservas": reservas_view,
-            "total_pedidos": total_pedidos,
-            "total_pendentes": total_pendentes,
-            "total_gasto": total_gasto,
+            **historico,
+        },
+    )
+
+
+# rota para o vendedor listar todos os clientes cadastrados
+@app.get("/clientes", response_class=HTMLResponse)
+def listar_clientes_page(
+    request: Request,
+    admin: Vendedor = Depends(get_admin),
+):
+    with Session(engine) as session:
+        clientes = session.exec(select(Cliente)).all()
+        reservas = session.exec(select(Reserva)).all()
+
+        resumo_por_cliente: dict[int, dict] = {}
+        for c in clientes:
+            resumo_por_cliente[c.id] = {"pedidos": 0, "total_gasto": 0.0}
+
+        for r in reservas:
+            resumo = resumo_por_cliente.get(r.cliente_id)
+            if resumo is None:
+                continue
+            resumo["pedidos"] += 1
+            if r.concluida:
+                resumo["total_gasto"] += r.valor_efetivo if r.valor_efetivo else r.valor
+
+        clientes_view = [
+            {
+                "id": c.id,
+                "nome": c.nome,
+                "pedidos": resumo_por_cliente[c.id]["pedidos"],
+                "total_gasto": resumo_por_cliente[c.id]["total_gasto"],
+            }
+            for c in clientes
+        ]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="clientsList.html",
+        context={"clientes": clientes_view},
+    )
+
+
+# rota para o vendedor ver o perfil e o histórico de compras de um cliente
+@app.get(
+    "/clientes/{cliente_id}",
+    response_class=HTMLResponse,
+    responses={404: {"description": CLIENT_NOT_FOUND}},
+)
+def perfil_cliente_page(
+    request: Request,
+    cliente_id: int,
+    admin: Vendedor = Depends(get_admin),
+):
+    with Session(engine) as session:
+        cliente = session.get(Cliente, cliente_id)
+        if not cliente:
+            raise HTTPException(status_code=404, detail=CLIENT_NOT_FOUND)
+
+        historico = montar_historico_cliente(session, cliente_id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="clientProfile.html",
+        context={
+            "cliente": cliente,
+            **historico,
         },
     )
 
@@ -444,6 +529,48 @@ def stock(request: Request, admin: Vendedor = Depends(get_admin)):
         context={"produtos": produtos},
     )
 
+
+@app.get("/loja")
+def buscar_loja(admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+
+        if loja is None:
+            loja = Loja()
+            session.add(loja)
+            session.commit()
+            session.refresh(loja)
+
+        return loja
+
+
+@app.put("/loja")
+def atualizar_loja(dados: Loja, admin: Vendedor = Depends(get_admin)):
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+
+        if loja is None:
+            loja = Loja()
+            session.add(loja)
+
+        loja.sqlmodel_update(dados.model_dump(exclude_unset=True))
+
+        session.add(loja)
+        session.commit()
+        session.refresh(loja)
+
+        return loja
+
+
+@app.get("/settings")
+def settings(
+    request: Request,
+    admin: Vendedor = Depends(get_admin),
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="settings.html",
+    )
 
 # rota de pedidos (reservas) do dono da loja
 @app.get("/orders")
@@ -643,6 +770,98 @@ def product(
             "avaliacoes": avaliacoes,
         },
     )
+
+
+# -----------------------------------------------------------------
+# TEMA DA LOJA
+# -----------------------------------------------------------------
+# função usada pelos templates (via Jinja global "loja_atual") para
+# pegar os dados da loja em QUALQUER página, sem precisar que cada
+# rota busque e passe "loja" manualmente no context
+def obter_loja_atual() -> Loja:
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+        return loja if loja else Loja()
+
+
+templates.env.globals["loja_atual"] = obter_loja_atual
+
+
+# gera um .css dinâmico com as cores escolhidas pelo vendedor como
+# variáveis CSS (--cor-primaria, --cor-secundaria, --cor-destaque).
+# esse arquivo é importado em <head> ANTES dos outros .css, então
+# qualquer regra que use var(--cor-primaria) etc. já reflete a loja
+@app.get("/theme.css")
+def theme_css():
+    loja = obter_loja_atual()
+
+    css = f"""/* gerado automaticamente a partir das configurações da loja */
+:root {{
+  --cor-primaria: {loja.cor_primaria};
+  --cor-secundaria: {loja.cor_secundaria};
+  --cor-destaque: {loja.cor_destaque};
+}}
+"""
+
+    return Response(
+        content=css,
+        media_type="text/css",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+# upload da logo da loja
+@app.post("/loja/logo")
+def enviar_logo(
+    logo: UploadFile = File(...),
+    admin: Vendedor = Depends(get_admin),
+):
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+        if loja is None:
+            loja = Loja()
+
+        os.makedirs("static/images", exist_ok=True)
+
+        nome_arquivo = os.path.basename(logo.filename)
+        caminho = f"images/loja_logo_{nome_arquivo}"
+
+        with open(f"static/{caminho}", "wb") as buffer:
+            shutil.copyfileobj(logo.file, buffer)
+
+        loja.logo = caminho
+
+        session.add(loja)
+        session.commit()
+
+    return {"ok": True, "logo": caminho}
+
+
+# upload do banner da loja
+@app.post("/loja/banner")
+def enviar_banner(
+    banner: UploadFile = File(...),
+    admin: Vendedor = Depends(get_admin),
+):
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+        if loja is None:
+            loja = Loja()
+
+        os.makedirs("static/images", exist_ok=True)
+
+        nome_arquivo = os.path.basename(banner.filename)
+        caminho = f"images/loja_banner_{nome_arquivo}"
+
+        with open(f"static/{caminho}", "wb") as buffer:
+            shutil.copyfileobj(banner.file, buffer)
+
+        loja.banner = caminho
+
+        session.add(loja)
+        session.commit()
+
+    return {"ok": True, "banner": caminho}
 
 
 # rota auxiliar para visualizar os usuários criados
@@ -1295,3 +1514,11 @@ def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
             "itens": itens_formatados,
             "total": valor_total,
         }
+
+
+# permite rodar o servidor diretamente com "python main.py"
+# (alternativa a "uvicorn main:app --reload")
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

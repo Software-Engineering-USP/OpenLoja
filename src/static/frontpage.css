@@ -27,7 +27,7 @@ body {
 
 /* Barra de Anúncio Superior */
 .top-bar {
-  background-color: #232978; /* Seu azul escuro */
+  background-color: var(--cor-primaria, #232978); /* Seu azul escuro */
   color: #ffffff;
   text-align: center;
   padding: 8px 10px;
@@ -54,6 +54,9 @@ body {
 
 /* Logotipo */
 .logo a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 24px;
   font-weight: 800;
   color: #111111;
@@ -61,8 +64,15 @@ body {
   text-transform: uppercase;
 }
 
+.logo-img {
+  height: 36px;
+  width: auto;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
 .logo a span {
-  color: #3b82f6; /* Seu azul de destaque */
+  color: var(--cor-secundaria, #3b82f6); /* cor de destaque escolhida pelo vendedor */
 }
 
 /* Links de Navegação */
@@ -82,7 +92,7 @@ body {
 
 .nav-links a:hover,
 .nav-links a.active {
-  color: #3b82f6; /* Destaque azul */
+  color: var(--cor-secundaria, #3b82f6); /* Destaque azul */
 }
 
 /* Barra de Pesquisa (Header) */
@@ -113,7 +123,7 @@ body {
 }
 
 .search-container button:hover {
-  color: #3b82f6;
+  color: var(--cor-secundaria, #3b82f6);
 }
 
 .header-actions{
@@ -189,7 +199,7 @@ body {
 }
 
 .icon-badge-container:hover {
-  color: #3b82f6;
+  color: var(--cor-secundaria, #3b82f6);
 }
 
 /* Contador nos Ícones */
@@ -197,7 +207,7 @@ body {
   position: absolute;
   top: -8px;
   right: -10px;
-  background-color: #3b82f6; /* Contador azul */
+  background-color: var(--cor-secundaria, #3b82f6); /* Contador azul */
   color: #ffffff;
   font-size: 11px;
   font-weight: bold;
@@ -251,13 +261,13 @@ body {
 }
 
 .tag-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--cor-secundaria, #3b82f6);
+  color: var(--cor-secundaria, #3b82f6);
 }
 
 .tag-btn.active {
-  background-color: #3b82f6; /* Fundo azul quando ativo */
-  border-color: #3b82f6;
+  background-color: var(--cor-secundaria, #3b82f6); /* Fundo azul quando ativo */
+  border-color: var(--cor-secundaria, #3b82f6);
   color: #ffffff;
 }
 
@@ -320,7 +330,7 @@ body {
 }
 
 .card-badge.new-badge {
-  background-color: #3b82f6; /* Alinhado ao azul do tema se preferir */
+  background-color: var(--cor-secundaria, #3b82f6); /* Alinhado ao azul do tema se preferir */
 }
 
 /* Bloco de Informações do Produto */
@@ -350,7 +360,7 @@ body {
 .product-price {
   font-size: 18px;
   font-weight: 700;
-  color: #232978; /* Preço ganha destaque com o azul escuro */
+  color: var(--cor-primaria, #232978); /* Preço ganha destaque com o azul escuro */
   margin-bottom: 15px;
   margin-top: auto; /* Alinha o preço e botão no final de todos os cards */
 }
@@ -368,7 +378,7 @@ body {
 }
 
 .buy-btn:hover {
-  background-color: #3b82f6; /* Transição para azul no hover */
+  background-color: var(--cor-secundaria, #3b82f6); /* Transição para azul no hover */
 }
 
 /* Mensagem de Estado Vazio (Sem resultados) */
@@ -400,7 +410,7 @@ body {
 }
 
 #voltar-catalogo:hover{
-    color: #0d6efd;
+    color: var(--cor-secundaria, #0d6efd);
 }
 
 
@@ -451,7 +461,7 @@ body {
 .product-detail-price{
     font-size: 2rem;
     font-weight: 800;
-    color: #0d6efd;
+    color: var(--cor-secundaria, #0d6efd);
     margin: 0;
 
     padding-bottom: 18px;
@@ -481,7 +491,7 @@ body {
 
 
 .product-detail-tag{
-    color: #1d4ed8;
+    color: var(--cor-secundaria, #1d4ed8);
     background: #dbeafe;
 }
 
@@ -534,7 +544,7 @@ body {
     border: none;
     border-radius: 10px;
 
-    background: #0d6efd;
+    background: var(--cor-secundaria, #0d6efd);
     color: white;
 
     cursor: pointer;
