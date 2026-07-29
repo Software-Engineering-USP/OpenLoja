@@ -61,6 +61,7 @@ SESSION_MAX_AGE = 60 * 60 * 24 * 7
 # constantes para evitar duplicação
 RESERVE_NOT_FOUND = "Reserva não encontrada"
 CLIENT_NOT_FOUND = "Cliente não encontrado"
+STATIC_IMAGES_DIR = "static/images"
 
 # setup do SQL
 arquivo_sqlite = "database.db"
@@ -454,7 +455,7 @@ def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_u
 @app.get("/clientes", response_class=HTMLResponse)
 def listar_clientes_page(
     request: Request,
-    admin: Vendedor = Depends(get_admin),
+    admin: Annotated[Vendedor, Depends(get_admin)],
 ):
     with Session(engine) as session:
         clientes = session.exec(select(Cliente)).all()
@@ -498,7 +499,7 @@ def listar_clientes_page(
 def perfil_cliente_page(
     request: Request,
     cliente_id: int,
-    admin: Vendedor = Depends(get_admin),
+    admin: Annotated[Vendedor, Depends(get_admin)],
 ):
     with Session(engine) as session:
         cliente = session.get(Cliente, cliente_id)
@@ -531,7 +532,7 @@ def stock(request: Request, admin: Vendedor = Depends(get_admin)):
 
 
 @app.get("/loja")
-def buscar_loja(admin: Vendedor = Depends(get_admin)):
+def buscar_loja(admin: Annotated[Vendedor, Depends(get_admin)]):
     with Session(engine) as session:
         loja = session.exec(select(Loja)).first()
 
@@ -545,7 +546,7 @@ def buscar_loja(admin: Vendedor = Depends(get_admin)):
 
 
 @app.put("/loja")
-def atualizar_loja(dados: Loja, admin: Vendedor = Depends(get_admin)):
+def atualizar_loja(dados: Loja, admin: Annotated[Vendedor, Depends(get_admin)]):
     with Session(engine) as session:
         loja = session.exec(select(Loja)).first()
 
@@ -565,7 +566,7 @@ def atualizar_loja(dados: Loja, admin: Vendedor = Depends(get_admin)):
 @app.get("/settings")
 def settings(
     request: Request,
-    admin: Vendedor = Depends(get_admin),
+    admin: Annotated[Vendedor ,Depends(get_admin)],
 ):
     return templates.TemplateResponse(
         request=request,
@@ -813,15 +814,15 @@ def theme_css():
 # upload da logo da loja
 @app.post("/loja/logo")
 def enviar_logo(
-    logo: UploadFile = File(...),
-    admin: Vendedor = Depends(get_admin),
+    logo: Annotated[UploadFile, File(...)],
+    admin: Annotated[Vendedor, Depends(get_admin)],
 ):
     with Session(engine) as session:
         loja = session.exec(select(Loja)).first()
         if loja is None:
             loja = Loja()
 
-        os.makedirs("static/images", exist_ok=True)
+        os.makedirs(STATIC_IMAGES_DIR, exist_ok=True)
 
         nome_arquivo = os.path.basename(logo.filename)
         caminho = f"images/loja_logo_{nome_arquivo}"
@@ -840,15 +841,15 @@ def enviar_logo(
 # upload do banner da loja
 @app.post("/loja/banner")
 def enviar_banner(
-    banner: UploadFile = File(...),
-    admin: Vendedor = Depends(get_admin),
+    banner: Annotated[UploadFile, File(...)],
+    admin: Annotated[Vendedor, Depends(get_admin)],
 ):
     with Session(engine) as session:
         loja = session.exec(select(Loja)).first()
         if loja is None:
             loja = Loja()
 
-        os.makedirs("static/images", exist_ok=True)
+        os.makedirs(STATIC_IMAGES_DIR, exist_ok=True)
 
         nome_arquivo = os.path.basename(banner.filename)
         caminho = f"images/loja_banner_{nome_arquivo}"
@@ -947,7 +948,7 @@ def enviar_imagem(
         if produto is None:
             raise HTTPException(404, "Produto não encontrado")
 
-        os.makedirs("static/images", exist_ok=True)
+        os.makedirs(STATIC_IMAGES_DIR, exist_ok=True)
 
         nome_imagem = os.path.basename(imagem.filename)
         caminho = f"images/{produto_id}_{nome_imagem}"
