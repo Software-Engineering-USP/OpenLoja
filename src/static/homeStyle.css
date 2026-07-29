@@ -15,6 +15,8 @@ header {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid var(--cor-primaria, #232978);
   flex-wrap: wrap;
 }
 .brand {
@@ -26,7 +28,7 @@ header {
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #3b82f6, #10b981);
+  background: var(--cor-primaria, #232978);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,13 +53,13 @@ header {
   text-decoration: none;
   padding: 12px 18px;
   border-radius: 10px;
-  background: #1d4ed8;
+  background: var(--cor-secundaria, #1d4ed8);
   color: white;
   font-weight: 600;
   transition: background 0.2s ease;
 }
 .action-buttons a:hover {
-  background: #2563eb;
+  background: var(--cor-secundaria, #2563eb);
 }
 .dashboard-grid {
   display: grid;
@@ -79,6 +81,7 @@ header {
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 8px;
+  color: var(--cor-primaria, #232978);
 }
 .card small {
   color: #666;
@@ -120,7 +123,7 @@ header {
 }
 .stat-row span:last-child {
   font-weight: 700;
-  color: #111827;
+  color: var(--cor-primaria, #111827);
 }
 .chart-placeholder {
   height: 240px;

@@ -1,0 +1,6 @@
+fastapi[standard]
+sqlmodel
+pre-commit
+itsdangerous
+pytest
+httpx

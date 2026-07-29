@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ loja_atual().nome }} · Minha Conta</title>
+    <title>{{ loja_atual().nome }} · {{ cliente.nome }}</title>
     <link rel="stylesheet" href="/theme.css">
     <link rel="stylesheet" href="../static/homeStyle.css">
     <link rel="stylesheet" href="../static/dashboardStyle.css">
@@ -14,15 +14,16 @@
     <div class="container">
         <header>
             <div class="brand">
-                <div class="brand-icon">{{ loja.nome[0]|upper if loja.nome else "S" }}</div>
+                <div class="brand-icon">{{ cliente.nome[0]|upper }}</div>
                 <div class="brand-info">
-                    <h1>Minha Conta</h1>
-                    <p>Bem-vindo, {{ cliente.nome }}</p>
+                    <h1>{{ cliente.nome }}</h1>
+                    <p>Perfil do cliente e histórico de compras.</p>
                 </div>
             </div>
             <nav class="action-buttons">
-                <a href="/homeCliente">Loja</a>
-                <a href="#" onclick="logout(event)">Sair</a>
+                <a href="/clientes">&larr; Clientes</a>
+                <a href="/orders">Pedidos</a>
+                <a href="/home">Home</a>
             </nav>
         </header>
 
@@ -45,11 +46,14 @@
             </div>
         </div>
 
-        <!-- Tabela de pedidos do cliente -->
+        <!-- Histórico de compras -->
         <div class="panel">
-            <h2>Meus Pedidos</h2>
+            <h2>Histórico de Compras</h2>
 
             <div class="toolbar">
+                <label for="pedidos-search" style="display:none;">
+                    Buscar pedidos
+                </label>
                 <input type="text" id="pedidos-search" placeholder="Buscar por produto...">
             </div>
 
@@ -64,9 +68,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- BACKEND LOOP (Jinja2) -->
                         {% for r in reservas %}
-                        <tr data-id="{{ r.id }}">
+                        <tr data-id="{{ r.id }}" data-produtos="{{ (r.itens | map(attribute='nome') | join(' '))|lower }}">
                             <td>{{ r.id }}</td>
                             <td>
                                 {% if r.itens %}
@@ -92,7 +95,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="empty-row">Nenhum pedido realizado ainda.</td>
+                            <td colspan="4" class="empty-row">Este cliente ainda não fez nenhum pedido.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -102,6 +105,16 @@
 
     </div>
 
-    <script src="../static/clientScript.js"></script>
+    <script>
+        const busca = document.getElementById("pedidos-search");
+        const linhas = document.querySelectorAll("#pedidos-table tbody tr[data-produtos]");
+
+        busca.addEventListener("input", () => {
+            const termo = busca.value.trim().toLowerCase();
+            linhas.forEach((linha) => {
+                linha.style.display = linha.dataset.produtos.includes(termo) ? "" : "none";
+            });
+        });
+    </script>
 </body>
 </html>

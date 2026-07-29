@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ loja_atual().nome }} · Configurações</title>
+
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="../static/homeStyle.css">
+    <link rel="stylesheet" href="../static/dashboardStyle.css">
+    <link rel="stylesheet" href="../static/settingsStyle.css">
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <div class="brand">
+            <div class="brand-icon">⚙</div>
+
+            <div class="brand-info">
+                <h1>Configurações da Loja</h1>
+                <p>Personalize sua loja.</p>
+            </div>
+        </div>
+
+        <nav class="action-buttons">
+            <a href="/home">Home</a>
+            <a href="/stock">Estoque</a>
+            <a href="/clientes">Clientes</a>
+            <a href="/statistics">Estatísticas</a>
+            <a href="/orders">Pedidos</a>
+        </nav>
+    </header>
+
+    <form id="settings-form">
+
+        <div class="settings-grid">
+
+            <!-- Identidade -->
+            <section class="card">
+
+                <h2>Identidade</h2>
+
+                <label for="nome-loja">Nome da Loja</label>
+                <input type="text" id="nome-loja">
+
+                <label for="slogan">Slogan</label>
+                <input type="text" id="slogan">
+
+                <label for="descricao">Descrição</label>
+                <textarea id="descricao" rows="4"></textarea>
+
+            </section>
+
+            <!-- Aparência -->
+            <section class="card">
+
+                <h2>Aparência</h2>
+
+                <label for="logo">Logo</label>
+                <input
+                    type="file"
+                    id="logo"
+                    accept="image/*">
+
+                <img
+                    id="logo-preview"
+                    class="logo-preview"
+                    src=""
+                    alt="Pré-visualização da logo"
+                    style="display:none;"
+                >
+
+                <label for="banner">Banner</label>
+                <input
+                    type="file"
+                    id="banner"
+                    accept="image/*">
+
+                <img
+                    id="banner-preview"
+                    class="banner-preview"
+                    src=""
+                    alt="Pré-visualização do banner"
+                    style="display:none;"
+                >
+
+                <label for="cor-primaria">Cor Primária</label>
+                <input type="color" id="cor-primaria">
+
+                <label for="cor-secundaria">Cor Secundária</label>
+                <input type="color" id="cor-secundaria">
+
+                <label for="cor-destaque">Cor de Destaque</label>
+                <input type="color" id="cor-destaque">
+
+            </section>
+
+            <!-- Contato -->
+            <section class="card">
+
+                <h2>Contato</h2>
+
+                <label for="email">Email</label>
+                <input type="email" id="email">
+
+                <label for="telefone">Telefone</label>
+                <input type="text" id="telefone">
+
+                <label for="whatsapp">WhatsApp</label>
+                <input type="text" id="whatsapp">
+
+                <label for="endereco">Endereço</label>
+                <input type="text" id="endereco">
+
+            </section>
+
+            <!-- Redes -->
+            <section class="card">
+
+                <h2>Redes Sociais</h2>
+
+                <label for="instagram">Instagram</label>
+                <input type="text" id="instagram">
+
+                <label for="facebook">Facebook</label>
+                <input type="text" id="facebook">
+
+            </section>
+
+            <!-- Informações -->
+            <section class="card">
+
+                <h2>Informações da Loja</h2>
+
+                <label for="horario">Horário de Funcionamento</label>
+                <input type="text" id="horario">
+
+                <label for="trocas">Política de Trocas</label>
+                <textarea id="trocas" rows="3"></textarea>
+
+                <label for="devolucao">Política de Devolução</label>
+                <textarea id="devolucao" rows="3"></textarea>
+
+            </section>
+
+        </div>
+
+        <div class="save-area">
+            <button
+                type="submit"
+                class="primary-btn">
+                Salvar Alterações
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+<script src="../static/settingsScript.js"></script>
+
+</body>
+</html>

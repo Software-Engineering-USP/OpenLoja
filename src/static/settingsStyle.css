@@ -1,0 +1,130 @@
+.settings-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
+    gap:28px;
+    margin-top:30px;
+}
+
+.card{
+
+    background:white;
+
+    border-radius:14px;
+
+    padding:28px;
+
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+
+}
+
+.card h2{
+
+    margin-bottom:22px;
+
+    color:var(--cor-primaria, #232978);
+
+    font-size:1.3rem;
+
+}
+
+.card label{
+
+    display:block;
+
+    font-weight:600;
+
+    margin-top:16px;
+    margin-bottom:6px;
+
+}
+
+.card input[type=text],
+.card input[type=email],
+.card textarea{
+
+    width:100%;
+
+    padding:12px;
+
+    border:1px solid #d8d8d8;
+
+    border-radius:8px;
+
+    font-size:.95rem;
+
+    box-sizing:border-box;
+
+}
+
+.card textarea{
+
+    resize:vertical;
+
+    min-height:90px;
+
+}
+
+.card input[type=file]{
+
+    margin-top:8px;
+
+}
+
+.card input[type=color]{
+
+    width:70px;
+    height:42px;
+
+    border:none;
+
+    padding:0;
+
+    cursor:pointer;
+
+    background:none;
+
+}
+
+.logo-preview{
+
+    width:120px;
+
+    margin-top:15px;
+
+    border-radius:10px;
+
+    border:1px solid #ddd;
+
+}
+
+.banner-preview{
+
+    width:100%;
+
+    max-height:170px;
+
+    margin-top:15px;
+
+    object-fit:cover;
+
+    border-radius:10px;
+
+    border:1px solid #ddd;
+
+}
+
+.save-area{
+
+    margin-top:35px;
+
+    display:flex;
+
+    justify-content:flex-end;
+
+}
+
+.primary-btn{
+
+    padding:12px 32px;
+
+}

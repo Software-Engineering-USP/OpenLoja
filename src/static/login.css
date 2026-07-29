@@ -17,7 +17,7 @@ form {
   width: 40vw;
   min-height: 80vh;
   border-radius: 50px;
-  color: #1d4ed8;
+  color: var(--cor-secundaria, #1d4ed8);
   box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
 }
 
@@ -82,12 +82,12 @@ input {
   border-radius: 12px;
   cursor: pointer;
   border: none;
-  background-color: #1d4ed8;
+  background-color: var(--cor-secundaria, #1d4ed8);
   color: #fff;
 }
 
 #enviar:hover {
-  background-color: #2563eb;
+  background-color: var(--cor-secundaria, #2563eb);
 }
 
 #divisao {
@@ -107,13 +107,13 @@ input {
   border-radius: 12px;
   background: none;
   border: none;
-  color: #1d4ed8;
+  color: var(--cor-secundaria, #1d4ed8);
   cursor: pointer;
 }
 
 #botao_criarconta:hover {
   color: #c0d0ff;
-  background-color: #2563eb;
+  background-color: var(--cor-secundaria, #2563eb);
 }
 
 @media (max-width: 800px) {
