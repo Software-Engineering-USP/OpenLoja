@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from sqlmodel import SQLModel, create_engine, Session, select
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from models import (
     Vendedor,
     Cliente,
@@ -39,6 +40,23 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# chave secreta usada para assinar os cookies de sessão
+# se for de fato usar o app, defina "SECRET_KEY" aleatoriamente no ambiente
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    import secrets as _secrets
+
+    SECRET_KEY = _secrets.token_hex(32)
+    print(
+        "AVISO: variável de ambiente SECRET_KEY não definida",
+        "Usando uma chave temporária gerada agora",
+    )
+
+serializer = URLSafeTimedSerializer(SECRET_KEY, salt="session-cookie")
+
+# duração máxima de uma sessão, em segundos (7 dias)
+SESSION_MAX_AGE = 60 * 60 * 24 * 7
+
 # setup do SQL
 arquivo_sqlite = "database.db"
 url_sqlite = f"sqlite:///{arquivo_sqlite}"
@@ -59,50 +77,60 @@ def formatar_moeda(valor: float) -> str:
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+# decodifica e valida o cookie de sessão assinado.
+# retorna None se o cookie não existir, estiver expirado ou inválido
+def ler_sessao(session: str | None) -> dict | None:
+    if not session:
+        return None
+
+    try:
+        dados = serializer.loads(session, max_age=SESSION_MAX_AGE)
+    except (BadSignature, SignatureExpired):
+        return None
+
+    if not isinstance(dados, dict) or "nome" not in dados or "tipo" not in dados:
+        return None
+
+    return dados
+
+
 # função auxiliar que retorna o usuário logado, se houver, sem exigir autenticação
-def get_optional_user(
-    session_user: Annotated[str | None, Cookie()] = None,
-    tipo: Annotated[str | None, Cookie()] = None,
-):
-    if not session_user:
+def get_optional_user(session: Annotated[str | None, Cookie()] = None):
+    dados = ler_sessao(session)
+
+    if not dados:
         return None
 
-    with Session(engine) as session:
-        if tipo == "vendedor":
-            user = session.exec(
-                select(Vendedor).where(Vendedor.nome == session_user)
+    with Session(engine) as db:
+        if dados["tipo"] == "vendedor":
+            user = db.exec(
+                select(Vendedor).where(Vendedor.nome == dados["nome"])
             ).first()
-        elif tipo == "cliente":
-            user = session.exec(
-                select(Cliente).where(Cliente.nome == session_user)
-            ).first()
-
-    if not user:
-        return None
+        elif dados["tipo"] == "cliente":
+            user = db.exec(select(Cliente).where(Cliente.nome == dados["nome"])).first()
+        else:
+            return None
 
     return user
 
 
 # função auxiliar que captura o usuário logado no cookie
-def get_active_user(
-    session_user: Annotated[str | None, Cookie()] = None,
-    tipo: Annotated[str | None, Cookie()] = None,
-):
-    if not session_user:
+def get_active_user(session: Annotated[str | None, Cookie()] = None):
+    dados = ler_sessao(session)
+
+    if not dados:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Acesso negado: você não está logado.",
         )
 
-    with Session(engine) as session:
-        if tipo == "vendedor":
-            user = session.exec(
-                select(Vendedor).where(Vendedor.nome == session_user)
+    with Session(engine) as db:
+        if dados["tipo"] == "vendedor":
+            user = db.exec(
+                select(Vendedor).where(Vendedor.nome == dados["nome"])
             ).first()
-        elif tipo == "cliente":
-            user = session.exec(
-                select(Cliente).where(Cliente.nome == session_user)
-            ).first()
+        elif dados["tipo"] == "cliente":
+            user = db.exec(select(Cliente).where(Cliente.nome == dados["nome"])).first()
         else:
             raise HTTPException(401, "Tipo de usuário inválido.")
 
@@ -123,11 +151,13 @@ def get_admin(user: Annotated[Cliente | Vendedor, Depends(get_active_user)]):
 
 
 # função auxiliar que captura o TIPO do usuário logado no cookie
-def get_active_type(tipo: Annotated[str | None, Cookie()] = None):
-    if not tipo:
+def get_active_type(session: Annotated[str | None, Cookie()] = None):
+    dados = ler_sessao(session)
+
+    if not dados:
         return None
 
-    return tipo
+    return dados["tipo"]
 
 
 # rota inicial para acesso a criação da conta admin ou acesso
@@ -206,8 +236,14 @@ def logar(nome: str, senha: str, response: Response):
             if vendedor.senha != senha:
                 raise HTTPException(404, "Senha incorreta")
 
-            response.set_cookie("session_user", nome)
-            response.set_cookie("tipo", "vendedor")
+            token = serializer.dumps({"nome": nome, "tipo": "vendedor"})
+            response.set_cookie(
+                "session",
+                token,
+                httponly=True,
+                samesite="lax",
+                max_age=SESSION_MAX_AGE,
+            )
 
             return {"message": "Logado", "tipo": "vendedor"}
 
@@ -217,12 +253,25 @@ def logar(nome: str, senha: str, response: Response):
             if cliente.senha != senha:
                 raise HTTPException(404, "Senha incorreta")
 
-            response.set_cookie("session_user", nome)
-            response.set_cookie("tipo", "cliente")
+            token = serializer.dumps({"nome": nome, "tipo": "cliente"})
+            response.set_cookie(
+                "session",
+                token,
+                httponly=True,
+                samesite="lax",
+                max_age=SESSION_MAX_AGE,
+            )
 
             return {"message": "Logado", "tipo": "cliente"}
 
         raise HTTPException(404, "Usuário não encontrado")
+
+
+# rota para deslogar (apaga o cookie de sessão)
+@app.post("/logout")
+def deslogar(response: Response):
+    response.delete_cookie("session")
+    return {"message": "Deslogado"}
 
 
 # rota para o acesso à home do lojista
@@ -414,17 +463,28 @@ def statistics(request: Request, admin: Vendedor = Depends(get_admin)):
     top_produtos = []
     avaliacoes_recentes = []
 
+    agora = datetime.now()
+    ano_mes_atual = (agora.year, agora.month)
+
     with Session(engine) as session:
         produtos = session.exec(select(Produto)).all()
         produto_ids = [p.id for p in produtos]
 
         reservas = session.exec(select(Reserva).where(Reserva.concluida)).all()
-        estatisticas["vendas_mes"] = len(reservas)
+
+        # apenas reservas efetivadas e concluídas neste mês
+        reservas_mes_atual = [
+            r
+            for r in reservas
+            if r.data_conclusao is not None
+            and (r.data_conclusao.year, r.data_conclusao.month) == ano_mes_atual
+        ]
+
+        estatisticas["vendas_mes"] = len(reservas_mes_atual)
 
         estatisticas["receita_mensal"] = sum(
             r.valor_efetivo if r.valor_efetivo is not None else r.valor
-            for r in reservas
-            if r.concluida
+            for r in reservas_mes_atual
         )
 
         vendas_por_produto: dict[int, int] = {}
