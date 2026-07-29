@@ -64,7 +64,6 @@
   object-fit: contain;
   width: 100%;
   height: 100%;
-  object-fit: cover;
 }
 
 .product-detail-info h1 {
@@ -91,14 +90,12 @@
   font-size: 30px;
   font-weight: 800;
   color: #232978;
-  margin-bottom: 12px;
   margin: 18px 0 10px;
 }
 
 .stock-info {
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 22px;
   margin: 10px 0 20px;
 }
 .stock-info.in-stock {
