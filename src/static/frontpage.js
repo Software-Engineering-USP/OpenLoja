@@ -162,7 +162,7 @@ async function abrirProduto(id){
             <div class="product-detail-image">
 
                 <img 
-                    src="${produto.imagem}"
+                    src="/static/${produto.imagem}"
                     alt="${produto.nome}"
                 >
 

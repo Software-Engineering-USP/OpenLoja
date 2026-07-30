@@ -12,7 +12,12 @@
   <div id="container">
 
     <div id="title">
-      <img src="/static/icone.png" id="icone"> </img>
+      {% if loja and loja.logo %}
+      <img src="/static/{{ loja.logo }}" alt="{{ loja.nome }}" id="icone">
+      {% else %}
+      <img src="" id="icone"> </img>
+      {% endif %}
+
       {% if primeiroVendedor %}
       <h1>Bem-vindo!</h1>
       <h2>Você será o administrador da loja!</h2>

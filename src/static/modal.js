@@ -11,13 +11,13 @@ const botoes = document.querySelectorAll(".buy-btn");
 function mostrarCarrinho(itens) {
   const container = document.getElementById("cart-items");
 
-  container.innerHTML = "";
-
+    container.innerHTML = "";
+    
   itens.forEach((item) => {
     container.innerHTML += `
             <div class="cart-item">
-
-                <img src=""/static/${item.imagem}" alt="${item.nome}">
+                
+                <img src="/static/${item.imagem}" alt="${item.nome}">
 
                 <div class="cart-info">
                     <h4>${item.nome}</h4>
