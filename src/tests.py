@@ -5,7 +5,7 @@ Não testam nada de frontend/HTML/CSS — apenas o comportamento das rotas,
 regras de negócio e integridade dos dados.
 
 Como rodar:
-    pip install -r requirements-dev.txt
+    pip install -r requirements.txt
     pytest tests.py -v
 
 Cada teste roda contra um banco SQLite temporário e isolado (criado em um
