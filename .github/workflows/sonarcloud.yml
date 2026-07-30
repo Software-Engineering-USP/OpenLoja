@@ -12,6 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
       with:
+        # Disabling shallow clones is recommended for improving the relevancy of reporting
         fetch-depth: 0
 
     - name: Set up Python
@@ -22,10 +23,12 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r src/requirements.txt
+        pip install pytest pytest-cov
 
     - name: Run tests with coverage
       run: |
-        pytest tests.py --cov=main --cov-report=xml:coverage.xml -v
+        cd src
+        pytest tests.py --cov=main --cov-report=xml:../coverage.xml -v
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # Ex: v4.1.0 or sha1, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan
