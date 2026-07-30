@@ -952,3 +952,334 @@ def test_lista_clientes_ignora_reserva_de_cliente_removido(client):
     resposta = client.get("/clientes")
     assert resposta.status_code == 200
     assert "joao" not in resposta.text
+
+
+# ---------------------------------------------------------------------
+# GET /reservas/{id} — buscar_reserva
+# ---------------------------------------------------------------------
+
+
+def test_buscar_reserva_exige_login(client):
+    resposta = client.get("/reservas/1")
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_busca_reserva_pela_rota_de_admin(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/reservas/1")
+    assert resposta.status_code == 403
+
+
+def test_buscar_reserva_inexistente_retorna_404(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/reservas/9999")
+    assert resposta.status_code == 404
+
+
+def test_buscar_reserva_com_sucesso(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 2}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+
+    resposta = client.get(f"/reservas/{reserva_id}")
+    assert resposta.status_code == 200
+    dados = resposta.json()
+    assert dados["id"] == reserva_id
+    assert dados["cliente_id"] == cliente_id
+    assert dados["valor"] == 40
+
+
+# ---------------------------------------------------------------------
+# PUT /reservas/{id} — editar_reserva
+# ---------------------------------------------------------------------
+
+
+def test_editar_reserva_exige_login(client):
+    resposta = client.put("/reservas/1", json={})
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_edita_reserva(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.put("/reservas/1", json={})
+    assert resposta.status_code == 403
+
+
+def test_editar_reserva_inexistente_retorna_404(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.put("/reservas/9999", json={})
+    assert resposta.status_code == 404
+
+
+def test_editar_reserva_ja_concluida_falha(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    resposta = client.put(
+        f"/reservas/{reserva_id}",
+        json={"itens": [{"produto_id": produto_id, "quantidade": 2}]},
+    )
+    assert resposta.status_code == 400
+
+
+def test_editar_reserva_com_cliente_inexistente_falha(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+
+    resposta = client.put(f"/reservas/{reserva_id}", json={"cliente_id": 9999})
+    assert resposta.status_code == 404
+
+
+def test_editar_reserva_troca_cliente_com_sucesso(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    criar_usuario(client, "maria")
+    cliente_joao = id_do_cliente(client, "joao")
+    cliente_maria = id_do_cliente(client, "maria")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_joao,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+
+    resposta = client.put(f"/reservas/{reserva_id}", json={"cliente_id": cliente_maria})
+    assert resposta.status_code == 200
+    assert resposta.json()["cliente_id"] == cliente_maria
+
+
+def test_editar_reserva_com_itens_vazios_falha(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+
+    resposta = client.put(f"/reservas/{reserva_id}", json={"itens": []})
+    assert resposta.status_code == 400
+
+
+def test_editar_reserva_com_produto_inexistente_falha(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+
+    resposta = client.put(
+        f"/reservas/{reserva_id}",
+        json={"itens": [{"produto_id": 9999, "quantidade": 1}]},
+    )
+    assert resposta.status_code == 404
+
+
+def test_editar_reserva_substitui_itens_e_recalcula_valor(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_a = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    produto_b = criar_produto(client, nome="Copo", preco=15, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_a, "quantidade": 2}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    assert resposta.json()["valor"] == 40
+
+    resposta = client.put(
+        f"/reservas/{reserva_id}",
+        json={"itens": [{"produto_id": produto_b, "quantidade": 3}]},
+    )
+    assert resposta.status_code == 200
+    assert resposta.json()["valor"] == 45
+
+
+def test_editar_reserva_sem_alteracoes_retorna_reserva_inalterada(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+
+    resposta = client.put(f"/reservas/{reserva_id}", json={})
+    assert resposta.status_code == 200
+    assert resposta.json()["valor"] == 20
+    assert resposta.json()["cliente_id"] == cliente_id
+
+
+# ---------------------------------------------------------------------
+# POST /carrinho/sincronizar
+# ---------------------------------------------------------------------
+
+
+def test_sincronizar_carrinho_exige_login(client):
+    resposta = client.post("/carrinho/sincronizar", json=[])
+    assert resposta.status_code == 401
+
+
+def test_sincronizar_carrinho_com_lista_vazia_nao_altera_carrinho(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post("/carrinho/sincronizar", json=[])
+    assert resposta.status_code == 200
+    assert resposta.json()["ok"] is True
+
+    resposta = client.get("/carrinho")
+    assert resposta.json()["itens"] == []
+
+
+def test_sincronizar_carrinho_adiciona_itens_novos(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        "/carrinho/sincronizar",
+        json=[{"produto_id": produto_id, "quantidade": 3}],
+    )
+    assert resposta.status_code == 200
+
+    resposta = client.get("/carrinho")
+    assert resposta.json()["total"] == 60
+
+
+def test_sincronizar_carrinho_soma_quantidade_a_item_existente(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    client.post("/carrinho/add", params={"produto_id": produto_id, "quantidade": 1})
+
+    resposta = client.post(
+        "/carrinho/sincronizar",
+        json=[{"produto_id": produto_id, "quantidade": 2}],
+    )
+    assert resposta.status_code == 200
+
+    resposta = client.get("/carrinho")
+    assert resposta.json()["total"] == 60
+
+
+def test_sincronizar_carrinho_com_multiplos_produtos(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_a = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    produto_b = criar_produto(client, nome="Copo", preco=10, estoque=10)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        "/carrinho/sincronizar",
+        json=[
+            {"produto_id": produto_a, "quantidade": 1},
+            {"produto_id": produto_b, "quantidade": 2},
+        ],
+    )
+    assert resposta.status_code == 200
+
+    resposta = client.get("/carrinho")
+    assert resposta.json()["total"] == 40
