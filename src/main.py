@@ -444,12 +444,6 @@ def montar_historico_cliente(session: Session, cliente_id: int) -> dict:
     response_class=HTMLResponse,
     responses={404: {"description": CLIENT_NOT_FOUND}},
 )
-def cliente_page(
-    request: Request,
-    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
-):
-    if isinstance(user, Vendedor):
-        return RedirectResponse(url="/home", status_code=303)
 def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_user)]):
     with Session(engine) as session:
         
