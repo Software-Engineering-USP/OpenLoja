@@ -821,3 +821,135 @@ def test_home_do_lojista_nao_conta_reserva_pendente_como_venda(client):
     resposta = client.get("/home")
     assert resposta.status_code == 200
     assert "0" in resposta.text
+
+
+# ---------------------------------------------------------------------
+# /clientes — agregação de pedidos e total_gasto por cliente
+# ---------------------------------------------------------------------
+
+
+def test_lista_clientes_sem_reservas_mostra_zerado(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    criar_usuario(client, "joao")
+
+    resposta = client.get("/clientes")
+    assert resposta.status_code == 200
+    assert "joao" in resposta.text
+
+
+def test_lista_clientes_nao_soma_reserva_pendente_no_total_gasto(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 3}],
+        },
+    )
+
+    resposta = client.get("/clientes")
+    assert resposta.status_code == 200
+    assert "1" in resposta.text
+
+
+def test_lista_clientes_soma_valor_da_reserva_concluida(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 2}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    resposta = client.get("/clientes")
+    assert resposta.status_code == 200
+    assert "40" in resposta.text
+
+
+def test_lista_clientes_usa_valor_efetivo_quando_definido(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 2}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+    client.put(
+        f"/reservas/{reserva_id}/valor-efetivo",
+        json={"valor_efetivo": 15.0},
+    )
+
+    resposta = client.get("/clientes")
+    assert resposta.status_code == 200
+    assert "15" in resposta.text
+
+
+def test_lista_clientes_soma_multiplos_pedidos_do_mesmo_cliente(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=10, estoque=20)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    for _ in range(2):
+        resposta = client.post(
+            "/reservas",
+            json={
+                "cliente_id": cliente_id,
+                "itens": [{"produto_id": produto_id, "quantidade": 1}],
+            },
+        )
+        reserva_id = resposta.json()["id"]
+        client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    resposta = client.get("/clientes")
+    assert resposta.status_code == 200
+    assert "2" in resposta.text
+    assert "20" in resposta.text
+
+
+def test_lista_clientes_ignora_reserva_de_cliente_removido(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+
+    with main.Session(main.engine) as session:
+        cliente_orfao = session.get(main.Cliente, cliente_id)
+        session.delete(cliente_orfao)
+        session.commit()
+
+    resposta = client.get("/clientes")
+    assert resposta.status_code == 200
+    assert "joao" not in resposta.text
