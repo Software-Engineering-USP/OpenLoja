@@ -1549,7 +1549,13 @@ def listar_avaliacoes(produto_id: int):
 
 
 # rota para criar avaliações:
-@app.post("/produtos/{produto_id}/avaliacoes")
+@app.post(
+    "/produtos/{produto_id}/avaliacoes",
+    responses={
+        404: {"description": PRODUCT_NOT_FOUND},
+        400: {"description": "A nota deve estar entre 0 e 5."},
+    },
+)
 def criar_avaliacao(
     produto_id: int,
     dados: AvaliacaoCreate,
