@@ -150,7 +150,7 @@ class Loja(SQLModel, table=True):
     # Contato
     email: str = ""
     telefone: str = ""
-    whatsapp: str = ""
+    whatsapp: str = "5511999999999"
     endereco: str = ""
 
     # Redes sociais

@@ -8,13 +8,13 @@
 
 .back-btn{
     text-decoration:none;
-    color:#232978;
+    color:var(--cor-primaria, #232978);
     font-weight:600;
     transition:.2s;
 }
 
 .back-btn:hover{
-    color:#0d6efd;
+    color:var(--cor-secundaria, #0d6efd);
 }
 
 .about-container{
@@ -69,7 +69,7 @@
 .about-card h1{
     margin:0;
     font-size:2rem;
-    color:#232978;
+    color:var(--cor-primaria, #232978);
 }
 
 .about-card h2{
@@ -97,7 +97,7 @@
     margin-top:0;
     margin-bottom:20px;
 
-    color:#232978;
+    color:var(--cor-primaria, #232978);
 }
 
 .contact-card p{
@@ -109,7 +109,7 @@
 }
 
 .contact-card strong{
-    color:#232978;
+    color:var(--cor-primaria, #232978);
 }
 
 @media (max-width:700px){
