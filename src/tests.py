@@ -18,7 +18,7 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import create_engine
+from sqlmodel import create_engine, delete
 
 # precisa existir uma SECRET_KEY antes de importar o main.py,
 # senão ele gera uma aleatória a cada import (não teria problema
@@ -946,8 +946,7 @@ def test_lista_clientes_ignora_reserva_de_cliente_removido(client):
     )
 
     with main.Session(main.engine) as session:
-        cliente_orfao = session.get(main.Cliente, cliente_id)
-        session.delete(cliente_orfao)
+        session.exec(delete(main.Cliente).where(main.Cliente.id == cliente_id))
         session.commit()
 
     resposta = client.get("/clientes")
