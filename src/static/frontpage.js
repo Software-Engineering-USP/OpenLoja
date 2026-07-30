@@ -7,7 +7,6 @@ function pagina_login() {
 }
 
 function atualizarCarrinho(quantidade) {
-    console.log("atualizarCarrinho");
     const badge = document.getElementById("cart-count");
 
     if (quantidade === 0) {

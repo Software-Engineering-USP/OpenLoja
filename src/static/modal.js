@@ -235,11 +235,12 @@ document.addEventListener("click", async function (e) {
 
 // Função auxiliar para adicionar no carrinho local se o usuário estiver deslogado
 function adicionarCarrinhoLocal(botao) {
+  
   const produto = {
     id: Number(botao.dataset.id),
     nome: botao.dataset.nome,
     preco: Number(botao.dataset.preco),
-    imagem: botao.dataset.imagem,
+    imagem: botao.dataset.imagem.replace("/static/", ""),
     quantidade: Number(document.getElementById("quantidade")?.value) || 1,
   };
 
