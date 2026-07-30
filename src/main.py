@@ -202,15 +202,19 @@ async def root(
 # rota para login
 @app.get("/paginalogin", response_class=HTMLResponse)
 async def paginalogin(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html")
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+    return templates.TemplateResponse(request=request, name="login.html", context={"loja": loja})
 
 
 @app.get("/paginacria", response_class=HTMLResponse)
 async def paginacriar(request: Request):
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
     return templates.TemplateResponse(
         request=request,
         name="createAccount.html",
-        context={"primeiroVendedor": False},
+        context={"primeiroVendedor": False, "loja": loja},
     )
 
 
@@ -446,6 +450,17 @@ def cliente_page(
 ):
     if isinstance(user, Vendedor):
         return RedirectResponse(url="/home", status_code=303)
+def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_user)]):
+    with Session(engine) as session:
+        
+        # se eventualmente for um vendedor navegando na página de clientes
+        vendedor = session.exec(select(Vendedor).where(Vendedor.nome == user.nome)).first()
+        if vendedor:
+            return RedirectResponse(url="/home", status_code=303);
+        
+        cliente = session.get(Cliente, user.id)
+        if not cliente:
+            raise HTTPException(status_code=404, detail=CLIENT_NOT_FOUND)
 
     with Session(engine) as session:
         historico = montar_historico_cliente(session, user.id)
