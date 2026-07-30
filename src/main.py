@@ -587,6 +587,24 @@ def settings(
     )
 
 
+@app.get("/about")
+def about(
+    request: Request,
+    user: Cliente | Vendedor | None = Depends(get_optional_user),
+):
+    with Session(engine) as session:
+        loja = session.exec(select(Loja)).first()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="about.html",
+        context={
+            "usuario": user,
+            "loja": loja,
+        },
+    )
+
+
 # rota de pedidos (reservas) do dono da loja
 @app.get("/orders")
 def orders(request: Request, admin: Vendedor = Depends(get_admin)):

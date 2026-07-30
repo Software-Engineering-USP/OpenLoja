@@ -24,8 +24,7 @@
             <!-- Navigation Links -->
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
-                <li><a href="#about-us" class="active">Sobre nós</a></li>
-                <li><a href="#catalogo">Catálogo</a></li>
+                <a href="/about" class="active">Sobre nós</a>
             </ul>
 
             <!-- Shop Icons / Utilities -->
@@ -183,6 +182,7 @@
     </div>
     <script>
         const usuarioLogado = {{ "true" if usuario else "false" }};
+        const WHATSAPP_LOJA = "{{ loja.whatsapp if loja else '' }}";
     </script>
 
     <script src="/static/frontpage.js"></script>

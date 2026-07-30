@@ -1,0 +1,135 @@
+/* ================= SOBRE NÓS ================= */
+
+.about-header{
+    max-width:1200px;
+    margin:30px auto 0;
+    padding:0 20px;
+}
+
+.back-btn{
+    text-decoration:none;
+    color:#232978;
+    font-weight:600;
+    transition:.2s;
+}
+
+.back-btn:hover{
+    color:#0d6efd;
+}
+
+.about-container{
+    max-width:1000px;
+    margin:30px auto 60px;
+    padding:0 20px;
+
+    display:flex;
+    flex-direction:column;
+    gap:30px;
+}
+
+.about-banner{
+    width:100%;
+    height:280px;
+    object-fit:cover;
+
+    border-radius:18px;
+    box-shadow:0 8px 24px rgba(0,0,0,.08);
+}
+
+.about-card,
+.contact-card{
+    background:#fff;
+
+    border-radius:18px;
+
+    padding:32px;
+
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+}
+
+.about-card{
+    text-align:center;
+}
+
+.about-logo{
+    width:140px;
+    height:140px;
+
+    object-fit:cover;
+
+    border-radius:50%;
+
+    border:5px solid #fff;
+
+    box-shadow:0 4px 18px rgba(0,0,0,.15);
+
+    margin-bottom:20px;
+}
+
+.about-card h1{
+    margin:0;
+    font-size:2rem;
+    color:#232978;
+}
+
+.about-card h2{
+    margin-top:10px;
+    margin-bottom:25px;
+
+    color:#6b7280;
+    font-weight:500;
+    font-size:1.1rem;
+}
+
+.descricao{
+    max-width:750px;
+
+    margin:auto;
+
+    line-height:1.8;
+
+    color:#444;
+
+    font-size:1rem;
+}
+
+.contact-card h3{
+    margin-top:0;
+    margin-bottom:20px;
+
+    color:#232978;
+}
+
+.contact-card p{
+    margin:12px 0;
+
+    color:#444;
+
+    font-size:.98rem;
+}
+
+.contact-card strong{
+    color:#232978;
+}
+
+@media (max-width:700px){
+
+    .about-banner{
+        height:180px;
+    }
+
+    .about-card,
+    .contact-card{
+        padding:22px;
+    }
+
+    .about-logo{
+        width:110px;
+        height:110px;
+    }
+
+    .about-card h1{
+        font-size:1.7rem;
+    }
+
+}
