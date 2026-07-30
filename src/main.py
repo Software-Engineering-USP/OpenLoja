@@ -440,25 +440,21 @@ def montar_historico_cliente(session: Session, cliente_id: int) -> dict:
     response_class=HTMLResponse,
     responses={404: {"description": CLIENT_NOT_FOUND}},
 )
-def cliente_page(request: Request, user: Annotated[Cliente, Depends(get_active_user)]):
-    with Session(engine) as session:
-        
-        # se eventualmente for um vendedor navegando na página de clientes
-        vendedor = session.get(Vendedor, user.id)
-        if vendedor:
-            return RedirectResponse(url="/home", status_code=303);
-        
-        cliente = session.get(Cliente, user.id)
-        if not cliente:
-            raise HTTPException(status_code=404, detail=CLIENT_NOT_FOUND)
+def cliente_page(
+    request: Request,
+    user: Annotated[Cliente | Vendedor, Depends(get_active_user)],
+):
+    if isinstance(user, Vendedor):
+        return RedirectResponse(url="/home", status_code=303)
 
+    with Session(engine) as session:
         historico = montar_historico_cliente(session, user.id)
 
     return templates.TemplateResponse(
         request=request,
         name="clientPage.html",
         context={
-            "cliente": cliente,
+            "cliente": user,
             **historico,
         },
     )
