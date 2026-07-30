@@ -33,15 +33,19 @@ from models import (
     Loja,
     AvaliacaoCreate,
 )
+from pathlib import Path
 from datetime import datetime
 import os
 import shutil
 import json
 
+# variavel para manter cwd na testagem
+BASE_DIR = Path(__file__).resolve().parent
+
 # setup do Fastapi
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 # chave secreta usada para assinar os cookies de sessão
 # se for de fato usar o app, defina "SECRET_KEY" aleatoriamente no ambiente
@@ -569,12 +573,13 @@ def atualizar_loja(dados: Loja, admin: Annotated[Vendedor, Depends(get_admin)]):
 @app.get("/settings")
 def settings(
     request: Request,
-    admin: Annotated[Vendedor ,Depends(get_admin)],
+    admin: Annotated[Vendedor, Depends(get_admin)],
 ):
     return templates.TemplateResponse(
         request=request,
         name="settings.html",
     )
+
 
 # rota de pedidos (reservas) do dono da loja
 @app.get("/orders")
@@ -1451,14 +1456,11 @@ def sincronizar_carrinho(
 # rota para finalizar a compra transformando o carrinho em reserva
 @app.post(
     "/checkout",
-    responses={
-        404: {"description": "Carrinho ou produto não encontrado"},
-        400: {"description": "Carrinho vazio ou estoque insuficiente"},
-    },
+    responses={400: {"description": "Carrinho vazio ou estoque insuficiente"}},
 )
 def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
     with Session(engine) as session:
-        carrinho = _get_carrinho_or_404(session, user.id)
+        carrinho = _get_or_create_carrinho(session, user.id)
 
         links = session.exec(
             select(CarrinhoProdutoLink).where(
@@ -1520,11 +1522,9 @@ def checkout(user: Annotated[Cliente, Depends(get_active_user)]):
         }
 
 
-
 # rota para obter avaliações:
 @app.get("/produtos/{produto_id}/avaliacoes")
 def listar_avaliacoes(produto_id: int):
-
     with Session(engine) as session:
         avaliacoes = session.exec(
             select(Avaliacao)
@@ -1547,27 +1547,23 @@ def listar_avaliacoes(produto_id: int):
         for avaliacao in avaliacoes
     ]
 
+
 # rota para criar avaliações:
 @app.post("/produtos/{produto_id}/avaliacoes")
 def criar_avaliacao(
     produto_id: int,
     dados: AvaliacaoCreate,
-    user: Annotated[Cliente, Depends(get_active_user)]
+    user: Annotated[Cliente, Depends(get_active_user)],
 ):
     with Session(engine) as session:
-
         produto = session.get(Produto, produto_id)
 
         if not produto:
-            raise HTTPException(
-                status_code=404,
-                detail=PRODUCT_NOT_FOUND
-            )
+            raise HTTPException(status_code=404, detail=PRODUCT_NOT_FOUND)
 
         if dados.nota < 0 or dados.nota > 5:
             raise HTTPException(
-                status_code=400,
-                detail="A nota deve estar entre 0 e 5."
+                status_code=400, detail="A nota deve estar entre 0 e 5."
             )
 
         avaliacao = Avaliacao(
@@ -1578,7 +1574,7 @@ def criar_avaliacao(
             dia=datetime.now().day,
             mes=datetime.now().month,
             ano=datetime.now().year,
-            horario=datetime.now().hour * 100 + datetime.now().minute
+            horario=datetime.now().hour * 100 + datetime.now().minute,
         )
 
         session.add(avaliacao)
@@ -1586,6 +1582,7 @@ def criar_avaliacao(
         session.refresh(avaliacao)
 
         return avaliacao
+
 
 # permite rodar o servidor diretamente com "python main.py"
 # (alternativa a "uvicorn main:app --reload")
