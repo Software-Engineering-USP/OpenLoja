@@ -640,3 +640,184 @@ def test_criar_avaliacao_registra_dia_mes_ano_horario(client):
     assert 1 <= dados["mes"] <= 12
     assert dados["ano"] >= 2024
     assert isinstance(dados["horario"], int)
+
+
+# ---------------------------------------------------------------------
+# get_optional_user (via /homeCliente e /product/{id})
+# ---------------------------------------------------------------------
+
+
+def test_home_cliente_acessivel_sem_login(client):
+    resposta = client.get("/homeCliente")
+    assert resposta.status_code == 200
+
+
+def test_home_cliente_acessivel_logado_como_cliente(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/homeCliente")
+    assert resposta.status_code == 200
+
+
+def test_home_cliente_acessivel_logado_como_vendedor(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/homeCliente")
+    assert resposta.status_code == 200
+
+
+def test_pagina_produto_acessivel_sem_login(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    resposta = client.get(f"/product/{produto_id}")
+    assert resposta.status_code == 200
+
+
+def test_pagina_produto_acessivel_logado_como_cliente(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get(f"/product/{produto_id}")
+    assert resposta.status_code == 200
+
+
+def test_pagina_produto_acessivel_logado_como_vendedor(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+
+    resposta = client.get(f"/product/{produto_id}")
+    assert resposta.status_code == 200
+
+
+def test_pagina_produto_inexistente_retorna_404_mesmo_sem_login(client):
+    resposta = client.get("/product/9999")
+    assert resposta.status_code == 404
+
+
+def test_pagina_produto_inexistente_retorna_404_mesmo_logado(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/product/9999")
+    assert resposta.status_code == 404
+
+
+# ---------------------------------------------------------------------
+# show_profile (/home)
+# ---------------------------------------------------------------------
+
+
+def test_home_do_lojista_exige_login(client):
+    resposta = client.get("/home")
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_acessa_home_do_lojista(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/home")
+    assert resposta.status_code == 403
+
+
+def test_home_do_lojista_sem_vendas_mostra_zerado(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/home")
+    assert resposta.status_code == 200
+
+
+def test_home_do_lojista_reflete_estoque_atual(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_produto(client, nome="Copo", preco=15, estoque=5)
+
+    resposta = client.get("/home")
+    assert resposta.status_code == 200
+    assert "15" in resposta.text
+    assert "275" in resposta.text or "275,00" in resposta.text
+
+
+def test_home_do_lojista_conta_venda_concluida_no_mes_atual(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 2}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    resposta = client.get("/home")
+    assert resposta.status_code == 200
+    assert "40" in resposta.text
+
+
+def test_home_do_lojista_conta_novo_cliente_no_mes_atual(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    resposta = client.get("/home")
+    assert resposta.status_code == 200
+    assert "1" in resposta.text
+
+
+def test_home_do_lojista_nao_conta_reserva_pendente_como_venda(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+
+    resposta = client.get("/home")
+    assert resposta.status_code == 200
+    assert "0" in resposta.text
