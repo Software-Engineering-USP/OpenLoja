@@ -500,3 +500,143 @@ def test_cliente_ve_seu_proprio_historico(client):
     resposta = client.get("/cliente")
     assert resposta.status_code == 200
     assert "Mochila" in resposta.text
+
+
+# ---------------------------------------------------------------------
+# Avaliações
+# ---------------------------------------------------------------------
+
+
+def test_criar_avaliacao_com_nota_minima_valida(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        f"/produtos/{produto_id}/avaliacoes",
+        json={"nota": 0, "texto": "Nota minima"},
+    )
+    assert resposta.status_code == 200
+    assert resposta.json()["nota"] == 0
+
+
+def test_criar_avaliacao_com_nota_maxima_valida(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        f"/produtos/{produto_id}/avaliacoes",
+        json={"nota": 5, "texto": "Nota maxima"},
+    )
+    assert resposta.status_code == 200
+    assert resposta.json()["nota"] == 5
+
+
+# ---------------------------------------------------------------------
+# Avaliações (continuação)
+# ---------------------------------------------------------------------
+
+
+def test_criar_avaliacao_sem_nota_falha_validacao(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        f"/produtos/{produto_id}/avaliacoes",
+        json={"texto": "Faltou a nota"},
+    )
+    assert resposta.status_code == 422
+
+
+def test_criar_avaliacao_sem_texto_falha_validacao(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        f"/produtos/{produto_id}/avaliacoes",
+        json={"nota": 4},
+    )
+    assert resposta.status_code == 422
+
+
+def test_criar_avaliacao_com_nota_nao_numerica_falha_validacao(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        f"/produtos/{produto_id}/avaliacoes",
+        json={"nota": "cinco", "texto": "Nota invalida"},
+    )
+    assert resposta.status_code == 422
+
+
+def test_avaliacoes_de_produtos_diferentes_nao_se_misturam(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_a = criar_produto(client, nome="Produto A", preco=10)
+    produto_b = criar_produto(client, nome="Produto B", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+    client.post(
+        f"/produtos/{produto_a}/avaliacoes",
+        json={"nota": 5, "texto": "Sobre o produto A"},
+    )
+    client.post(
+        f"/produtos/{produto_b}/avaliacoes",
+        json={"nota": 1, "texto": "Sobre o produto B"},
+    )
+
+    avaliacoes_a = client.get(f"/produtos/{produto_a}/avaliacoes").json()
+    avaliacoes_b = client.get(f"/produtos/{produto_b}/avaliacoes").json()
+
+    assert len(avaliacoes_a) == 1
+    assert avaliacoes_a[0]["texto"] == "Sobre o produto A"
+
+    assert len(avaliacoes_b) == 1
+    assert avaliacoes_b[0]["texto"] == "Sobre o produto B"
+
+
+def test_criar_avaliacao_registra_dia_mes_ano_horario(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20)
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.post(
+        f"/produtos/{produto_id}/avaliacoes",
+        json={"nota": 3, "texto": "Ok"},
+    )
+    dados = resposta.json()
+    assert isinstance(dados["dia"], int)
+    assert 1 <= dados["mes"] <= 12
+    assert dados["ano"] >= 2024
+    assert isinstance(dados["horario"], int)
