@@ -17,7 +17,7 @@ function mostrarCarrinho(itens) {
     container.innerHTML += `
             <div class="cart-item">
 
-                <img src="${item.imagem}" alt="${item.nome}">
+                <img src=""/static/${item.imagem}" alt="${item.nome}">
 
                 <div class="cart-info">
                     <h4>${item.nome}</h4>
