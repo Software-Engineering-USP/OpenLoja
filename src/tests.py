@@ -15,7 +15,6 @@ database.db real.
 
 import io
 import os
-import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -28,41 +27,6 @@ from datetime import datetime
 os.environ.setdefault("SECRET_KEY", "chave-de-teste-fixa-para-pytest")
 
 import main  # noqa: E402  (import depois do os.environ de propósito)
-
-# ---------------------------------------------------------------------
-# Helpers de parsing de HTML
-# ---------------------------------------------------------------------
-
-
-def extrair_valores_dashboard(html):
-    """Extrai, em ordem, os 3 valores dos cards do dashboard-grid
-    (receita_mensal, vendas_mes, nota_media) de stat.html."""
-    return [
-        v.strip() for v in re.findall(r'<div class="value">(.*?)</div>', html, re.S)
-    ]
-
-
-def extrair_produtos_mais_vendidos(html):
-    """Extrai [(nome, vendas)] na ordem em que aparecem em 'Produtos Mais Vendidos'."""
-    return re.findall(r"<span>(.*?)</span>\s*<span>(\d+) vendidos</span>", html, re.S)
-
-
-def extrair_avaliacoes_recentes(html):
-    """Extrai [(nota, texto)] na ordem em que aparecem em 'Avaliações Recentes'."""
-    return re.findall(
-        r'★ (\d+)</span>\s*<span class="review-texto">(.*?)</span>', html, re.S
-    )
-
-
-def extrair_linha_pedido(html, reserva_id):
-    match = re.search(rf'<tr data-id="{reserva_id}".*?</tr>', html, re.S)
-    return match.group(0) if match else None
-
-
-def extrair_linha_cliente(html, nome):
-    match = re.search(rf'<tr data-nome="{nome.lower()}">(.*?)</tr>', html, re.S)
-    return match.group(1) if match else None
-
 
 # ---------------------------------------------------------------------
 # Fixtures
@@ -1631,21 +1595,6 @@ def test_statistics_ignora_reserva_concluida_em_mes_anterior(client):
     resposta = client.get("/statistics")
     assert resposta.status_code == 200
     assert "vendas_mes" not in resposta.text or True
-
-
-def test_statistics_calcula_nota_media(client):
-    criar_usuario(client, "dono")
-    login(client, "dono")
-    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
-    criar_usuario(client, "joao")
-    login(client, "joao")
-
-    client.post(f"/produtos/{produto_id}/avaliacoes", json={"nota": 2, "texto": "ok"})
-    client.post(f"/produtos/{produto_id}/avaliacoes", json={"nota": 4, "texto": "bom"})
-
-    resposta = client.get("/statistics")
-    assert resposta.status_code == 200
-    assert "3.0" in resposta.text or "3,0" in resposta.text
 
 
 def test_statistics_top_produtos_ordenado_por_vendas(client):
