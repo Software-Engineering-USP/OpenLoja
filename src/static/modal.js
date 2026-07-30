@@ -145,7 +145,7 @@ cartOverlay.addEventListener("click", function (e) {
 });
 
 // Número de WhatsApp da loja, com código do país e DDD (ex: 55 11 999999999)
-const NUMERO_WHATSAPP_LOJA = "5511999999999";
+const NUMERO_WHATSAPP_LOJA = WHATSAPP_LOJA.replace(/\D/g, "");
 
 // Monta o texto do resumo do pedido para enviar no WhatsApp
 function montarResumoWhatsApp(dados) {

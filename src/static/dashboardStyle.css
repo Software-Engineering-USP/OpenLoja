@@ -17,7 +17,7 @@
 .see-more-link {
   display: inline-block;
   margin-top: 14px;
-  color: var(--cor-secundaria, #1d4ed8);
+  color: var(--cor-primaria, #232978);
   font-weight: 600;
   font-size: 14px;
   text-decoration: none;
@@ -45,17 +45,17 @@
 }
 
 .primary-btn {
-  background: var(--cor-secundaria, #1d4ed8);
+  background: var(--cor-primaria, #232978);
   color: #fff;
   border: none;
   padding: 12px 18px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: filter 0.2s ease;
 }
 .primary-btn:hover {
-  background: var(--cor-secundaria, #2563eb);
+  filter: brightness(1.15);
 }
 
 .secondary-btn {
@@ -111,7 +111,7 @@
   text-decoration: none;
 }
 .product-name:hover {
-  color: var(--cor-secundaria, #1d4ed8);
+  color: var(--cor-primaria, #1d4ed8);
 }
 
 .tag {
@@ -151,8 +151,8 @@
   color: #374151;
 }
 .icon-btn:hover {
-  border-color: var(--cor-secundaria, #1d4ed8);
-  color: var(--cor-secundaria, #1d4ed8);
+  border-color: var(--cor-primaria, #1d4ed8);
+  color: var(--cor-primaria, #1d4ed8);
 }
 .danger-btn:hover {
   border-color: #b91c1c;

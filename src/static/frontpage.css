@@ -163,7 +163,7 @@ body {
 .header-action:hover,
 .login-btn:hover{
 
-    color:#4b74ff;
+    color:var(--cor-primaria, #4b74ff);
 }
 
 .badge{
@@ -553,7 +553,7 @@ body {
 
 
 .product-detail-info .buy-btn:hover{
-    background: #0b5ed7;
+    filter: brightness(1.1);
     transform: translateY(-2px);
 }
 

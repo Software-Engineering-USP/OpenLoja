@@ -53,13 +53,13 @@ header {
   text-decoration: none;
   padding: 12px 18px;
   border-radius: 10px;
-  background: var(--cor-secundaria, #1d4ed8);
+  background: var(--cor-primaria, #232978);
   color: white;
   font-weight: 600;
-  transition: background 0.2s ease;
+  transition: filter 0.2s ease;
 }
 .action-buttons a:hover {
-  background: var(--cor-secundaria, #2563eb);
+  filter: brightness(1.15);
 }
 .dashboard-grid {
   display: grid;

@@ -120,7 +120,7 @@
 
 .modal a{
 
-    color:#0077cc;
+    color:var(--cor-primaria, #0077cc);
 
     text-decoration:none;
 
