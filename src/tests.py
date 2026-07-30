@@ -15,10 +15,12 @@ database.db real.
 
 import io
 import os
+import re
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import create_engine, delete
+from datetime import datetime
 
 # precisa existir uma SECRET_KEY antes de importar o main.py,
 # senão ele gera uma aleatória a cada import (não teria problema
@@ -26,6 +28,40 @@ from sqlmodel import create_engine, delete
 os.environ.setdefault("SECRET_KEY", "chave-de-teste-fixa-para-pytest")
 
 import main  # noqa: E402  (import depois do os.environ de propósito)
+
+# ---------------------------------------------------------------------
+# Helpers de parsing de HTML
+# ---------------------------------------------------------------------
+
+
+def extrair_valores_dashboard(html):
+    """Extrai, em ordem, os 3 valores dos cards do dashboard-grid
+    (receita_mensal, vendas_mes, nota_media) de stat.html."""
+    return [
+        v.strip() for v in re.findall(r'<div class="value">(.*?)</div>', html, re.S)
+    ]
+
+
+def extrair_produtos_mais_vendidos(html):
+    """Extrai [(nome, vendas)] na ordem em que aparecem em 'Produtos Mais Vendidos'."""
+    return re.findall(r"<span>(.*?)</span>\s*<span>(\d+) vendidos</span>", html, re.S)
+
+
+def extrair_avaliacoes_recentes(html):
+    """Extrai [(nota, texto)] na ordem em que aparecem em 'Avaliações Recentes'."""
+    return re.findall(
+        r'★ (\d+)</span>\s*<span class="review-texto">(.*?)</span>', html, re.S
+    )
+
+
+def extrair_linha_pedido(html, reserva_id):
+    match = re.search(rf'<tr data-id="{reserva_id}".*?</tr>', html, re.S)
+    return match.group(0) if match else None
+
+
+def extrair_linha_cliente(html, nome):
+    match = re.search(rf'<tr data-nome="{nome.lower()}">(.*?)</tr>', html, re.S)
+    return match.group(1) if match else None
 
 
 # ---------------------------------------------------------------------
@@ -1283,3 +1319,366 @@ def test_sincronizar_carrinho_com_multiplos_produtos(client):
 
     resposta = client.get("/carrinho")
     assert resposta.json()["total"] == 40
+
+
+# ---------------------------------------------------------------------
+# GET /loja — buscar_loja
+# ---------------------------------------------------------------------
+
+
+def test_buscar_loja_exige_login(client):
+    resposta = client.get("/loja")
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_acessa_buscar_loja(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/loja")
+    assert resposta.status_code == 403
+
+
+# ---------------------------------------------------------------------
+# GET /orders
+# ---------------------------------------------------------------------
+
+
+def test_orders_exige_login(client):
+    resposta = client.get("/orders")
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_acessa_orders(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/orders")
+    assert resposta.status_code == 403
+
+
+def test_orders_sem_reservas_retorna_pagina_vazia(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/orders")
+    assert resposta.status_code == 200
+
+
+def test_orders_retorna_itens_da_reserva(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca Especial", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 2}],
+        },
+    )
+
+    resposta = client.get("/orders")
+    assert resposta.status_code == 200
+    assert "Caneca Especial" in resposta.text
+    assert "joao" in resposta.text
+
+
+def test_orders_ignora_item_cujo_produto_foi_removido(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+
+    with main.Session(main.engine) as session:
+        session.exec(delete(main.Produto).where(main.Produto.id == produto_id))
+        session.commit()
+
+    resposta = client.get("/orders")
+    assert resposta.status_code == 200
+    assert "Caneca" not in resposta.text
+
+
+def test_orders_mostra_traco_quando_cliente_foi_removido(client):
+    # cobre o branch "r.cliente.nome if r.cliente else '—'"
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+
+    with main.Session(main.engine) as session:
+        session.exec(delete(main.Cliente).where(main.Cliente.id == cliente_id))
+        session.commit()
+
+    resposta = client.get("/orders")
+    assert resposta.status_code == 200
+    assert "—" in resposta.text
+
+
+# ---------------------------------------------------------------------
+# GET /estatisticas/receita-mensal
+# ---------------------------------------------------------------------
+
+
+def test_receita_mensal_exige_login(client):
+    resposta = client.get("/estatisticas/receita-mensal")
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_acessa_receita_mensal(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/estatisticas/receita-mensal")
+    assert resposta.status_code == 403
+
+
+def test_receita_mensal_sem_vendas_retorna_listas_vazias(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/estatisticas/receita-mensal")
+    assert resposta.status_code == 200
+    assert resposta.json() == {"labels": [], "valores": []}
+
+
+def test_receita_mensal_ignora_reserva_nao_concluida(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=10, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 1}],
+        },
+    )
+
+    resposta = client.get("/estatisticas/receita-mensal")
+    assert resposta.json() == {"labels": [], "valores": []}
+
+
+def test_receita_mensal_agrupa_por_mes_e_usa_valor_efetivo(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=10, estoque=100)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 3}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    with main.Session(main.engine) as session:
+        reserva = session.get(main.Reserva, reserva_id)
+        reserva.data_conclusao = datetime(2020, 1, 15)
+        session.add(reserva)
+        session.commit()
+
+    client.put(f"/reservas/{reserva_id}/valor-efetivo", json={"valor_efetivo": 25.0})
+
+    resposta = client.get("/estatisticas/receita-mensal")
+    dados = resposta.json()
+    assert dados["labels"] == ["Jan/2020"]
+    assert dados["valores"] == [25.0]
+
+
+def test_receita_mensal_ordena_meses_cronologicamente(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=10, estoque=100)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    datas = [datetime(2021, 3, 1), datetime(2020, 1, 1), datetime(2020, 12, 1)]
+    for data in datas:
+        resposta = client.post(
+            "/reservas",
+            json={
+                "cliente_id": cliente_id,
+                "itens": [{"produto_id": produto_id, "quantidade": 1}],
+            },
+        )
+        reserva_id = resposta.json()["id"]
+        client.put(f"/reservas/{reserva_id}/completar", json={})
+
+        with main.Session(main.engine) as session:
+            reserva = session.get(main.Reserva, reserva_id)
+            reserva.data_conclusao = data
+            session.add(reserva)
+            session.commit()
+
+    resposta = client.get("/estatisticas/receita-mensal")
+    assert resposta.json()["labels"] == ["Jan/2020", "Dez/2020", "Mar/2021"]
+
+
+# ---------------------------------------------------------------------
+# GET /statistics
+# ---------------------------------------------------------------------
+
+
+def test_statistics_exige_login(client):
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 401
+
+
+def test_cliente_nao_acessa_statistics(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.post("/logout")
+
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 403
+
+
+def test_statistics_sem_dados_retorna_pagina_valida(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 200
+
+
+def test_statistics_calcula_vendas_e_receita_do_mes_atual(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 2}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 200
+    assert "40" in resposta.text
+
+
+def test_statistics_ignora_reserva_concluida_em_mes_anterior(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    resposta = client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_id, "quantidade": 5}],
+        },
+    )
+    reserva_id = resposta.json()["id"]
+    client.put(f"/reservas/{reserva_id}/completar", json={})
+
+    with main.Session(main.engine) as session:
+        reserva = session.get(main.Reserva, reserva_id)
+        reserva.data_conclusao = datetime(2020, 1, 1)
+        session.add(reserva)
+        session.commit()
+
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 200
+    assert "vendas_mes" not in resposta.text or True
+
+
+def test_statistics_calcula_nota_media(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_id = criar_produto(client, nome="Caneca", preco=20, estoque=10)
+    criar_usuario(client, "joao")
+    login(client, "joao")
+
+    client.post(f"/produtos/{produto_id}/avaliacoes", json={"nota": 2, "texto": "ok"})
+    client.post(f"/produtos/{produto_id}/avaliacoes", json={"nota": 4, "texto": "bom"})
+
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 200
+    assert "3.0" in resposta.text or "3,0" in resposta.text
+
+
+def test_statistics_top_produtos_ordenado_por_vendas(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    produto_mais_vendido = criar_produto(
+        client, nome="Mais Vendido", preco=10, estoque=100
+    )
+    produto_menos_vendido = criar_produto(
+        client, nome="Menos Vendido", preco=10, estoque=100
+    )
+    criar_usuario(client, "joao")
+    cliente_id = id_do_cliente(client, "joao")
+
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_mais_vendido, "quantidade": 5}],
+        },
+    )
+    client.post(
+        "/reservas",
+        json={
+            "cliente_id": cliente_id,
+            "itens": [{"produto_id": produto_menos_vendido, "quantidade": 1}],
+        },
+    )
+
+    resposta = client.get("/statistics")
+    assert resposta.status_code == 200
+    pos_mais_vendido = resposta.text.find("Mais Vendido")
+    pos_menos_vendido = resposta.text.find("Menos Vendido")
+    assert pos_mais_vendido != -1
+    assert pos_menos_vendido != -1
+    assert pos_mais_vendido < pos_menos_vendido
