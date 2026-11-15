@@ -17,10 +17,10 @@ function mostrarCarrinho(itens) {
     container.innerHTML += `
             <div class="cart-item">
                 
-                <img src="/static/${item.imagem}" alt="${item.nome}">
+                <img src="/static/${escapeHtml(item.imagem)}" alt="${escapeHtml(item.nome)}">
 
                 <div class="cart-info">
-                    <h4>${item.nome}</h4>
+                    <h4>${escapeHtml(item.nome)}</h4>
 
                     <span>Quantidade: ${item.quantidade}</span>
 
@@ -152,7 +152,7 @@ function montarResumoWhatsApp(dados) {
   let mensagem = `Olá! Gostaria de confirmar meu pedido #${dados.reserva_id}:\n\n`;
 
   dados.itens.forEach((item) => {
-    mensagem += `• ${item.quantidade}x ${item.nome} - R$ ${item.preco.toFixed(2)}\n`;
+    mensagem += `• ${item.quantidade}x ${escapeHtml(item.nome)} - R$ ${item.preco.toFixed(2)}\n`;
   });
 
   mensagem += `\nTotal: R$ ${dados.total.toFixed(2)}`;

@@ -8,11 +8,9 @@ services:
     env_file:
       - path: .env
         required: false
-    environment:
-      DATABASE_URL: sqlite:////data/database.db
     volumes:
-      - db-data:/data
-      - images:/code/static/images
+      # banco SQLite (/data/database.db) e imagens enviadas (/data/images)
+      - data:/data
     healthcheck:
       test:
         [
@@ -30,13 +28,9 @@ services:
       watch:
         - action: sync+restart
           path: ./src
-          target: /code
-          ignore:
-            - static/images/
-            - database.db
+          target: /app/src
         - action: rebuild
-          path: ./src/requirements.txt
+          path: ./requirements.txt
 
 volumes:
-  db-data:
-  images:
+  data:

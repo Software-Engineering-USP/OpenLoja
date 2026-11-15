@@ -181,7 +181,8 @@
 
     </div>
     <script>
-        const usuarioLogado = {{ "true" if usuario else "false" }};
+        // só clientes têm carrinho no servidor (vendedores usam o do navegador)
+        const usuarioLogado = {{ "true" if usuario_cliente else "false" }};
         const WHATSAPP_LOJA = "{{ loja.whatsapp if loja else '' }}";
     </script>
 

@@ -21,14 +21,10 @@ jobs:
         python-version: "3.12"
 
     - name: Install dependencies
-      run: |
-        pip install -r src/requirements.txt
-        pip install pytest pytest-cov
+      run: pip install -r requirements-dev.txt
 
     - name: Run tests with coverage
-      run: |
-        cd src
-        pytest tests.py --cov=main --cov-report=xml:../coverage.xml -v
+      run: pytest --cov=openloja --cov-report=xml:coverage.xml -v
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # Ex: v4.1.0 or sha1, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan

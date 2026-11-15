@@ -1,0 +1,21 @@
+[project]
+name = "openloja"
+version = "0.2.0"
+description = "Loja virtual e controle de estoque"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["openloja"]
+
+[tool.ruff]
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+extend-ignore = ["E402"]  # conftest define variáveis de ambiente antes dos imports
+
+[tool.ruff.lint.isort]
+known-first-party = ["openloja", "helpers"]

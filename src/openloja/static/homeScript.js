@@ -45,13 +45,11 @@ async function login() {
     const nome = document.getElementById("usuario").value;
     const senha = document.getElementById("senha").value;
 
-    const resposta = await fetch(
-	"/login?nome=" +
-	    encodeURIComponent(nome) +
-	    "&senha=" +
-	    encodeURIComponent(senha),
-	{ method: "POST" },
-    );
+    const resposta = await fetch("/login", {
+	method: "POST",
+	headers: { "Content-Type": "application/json" },
+	body: JSON.stringify({ nome, senha }),
+    });
 
     if (resposta.ok) {
 	await sincronizarCarrinho();

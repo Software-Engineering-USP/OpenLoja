@@ -1,3 +1,14 @@
+// escapa texto vindo do servidor antes de inseri-lo em HTML
+// (nomes, avaliações etc. são digitados por usuários)
+function escapeHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function pagina_criarconta() {
     window.location.href = "/paginacria";
 }
@@ -117,7 +128,7 @@ async function abrirProduto(id){
 
             <div class="avaliacao">
                 <h3>
-                    ${avaliacao.cliente}
+                    ${escapeHtml(avaliacao.cliente)}
                 </h3>
 
                 <p>
@@ -126,7 +137,7 @@ async function abrirProduto(id){
                 
                 <br>
                 <p>
-                    ${avaliacao.texto}
+                    ${escapeHtml(avaliacao.texto)}
                 </p>
                 <br>
  
@@ -161,8 +172,8 @@ async function abrirProduto(id){
             <div class="product-detail-image">
 
                 <img 
-                    src="/static/${produto.imagem}"
-                    alt="${produto.nome}"
+                    src="/static/${escapeHtml(produto.imagem)}"
+                    alt="${escapeHtml(produto.nome)}"
                 >
 
             </div>
@@ -171,7 +182,7 @@ async function abrirProduto(id){
             <div class="product-detail-info">
 
                 <h1>
-                    ${produto.nome}
+                    ${escapeHtml(produto.nome)}
                 </h1>
 
 
@@ -180,15 +191,15 @@ async function abrirProduto(id){
                 </p>
 
                 <p class="product-detail-category">
-                    ${produto.categoria}
+                    ${escapeHtml(produto.categoria)}
                 </p>
 
                 <p class="product-detail-description">
-                    ${produto.descricao}
+                    ${escapeHtml(produto.descricao)}
                 </p>
 
                 <p class="product-detail-tags">
-                    ${produto.tag}
+                    ${escapeHtml(produto.tag)}
                 </p>
 
                 <p>
@@ -214,9 +225,9 @@ async function abrirProduto(id){
                 <button
                     class="buy-btn"
                     data-id="${produto.id}"
-                    data-nome="${produto.nome}"
+                    data-nome="${escapeHtml(produto.nome)}"
                     data-preco="${produto.preco}"
-                    data-imagem="${produto.imagem}">
+                    data-imagem="${escapeHtml(produto.imagem)}">
                     
                     Adicionar ao Carrinho
 
@@ -307,7 +318,9 @@ async function abrirProduto(id){
         if (response.ok) {
             alert("Avaliação enviada!");
         } else {
-            alert("Erro ao enviar avaliação.");
+            const erro = await response.json().catch(() => ({}));
+            const detalhe = typeof erro.detail === "string" ? erro.detail : "";
+            alert(detalhe || "Erro ao enviar avaliação.");
         }
     }
 

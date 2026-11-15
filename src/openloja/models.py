@@ -1,31 +1,30 @@
-from sqlmodel import SQLModel, Field, Relationship
-from typing import List, Optional
+"""Tabelas do banco de dados (SQLModel)."""
+
 from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import DateTime
+from sqlmodel import Field, Relationship, SQLModel
 
 CLIENTE_ID_FK = "cliente.id"
 PRODUTO_ID_FK = "produto.id"
 
 
-class Usuario(SQLModel):
-    nome: str
-    senha: str
-
-
 class Vendedor(SQLModel, table=True):
-    id: Optional[int] | None = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
 
     nome: str
-    senha: str
+    senha: str  # hash (ver security.py)
 
 
 class Cliente(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     nome: str
-    senha: str
+    senha: str  # hash (ver security.py)
 
-    reservas: List["Reserva"] = Relationship(back_populates="cliente")
-    avaliacoes: List["Avaliacao"] = Relationship(back_populates="cliente")
+    reservas: list["Reserva"] = Relationship(back_populates="cliente")
+    avaliacoes: list["Avaliacao"] = Relationship(back_populates="cliente")
     carrinho: Optional["Carrinho"] = Relationship(back_populates="cliente")
 
 
@@ -52,8 +51,8 @@ class Produto(SQLModel, table=True):
     tag: str = Field(default="")
     imagem: str | None = Field(default=None)
 
-    avaliacoes: List["Avaliacao"] = Relationship(back_populates="produto")
-    reservas: List["Reserva"] = Relationship(
+    avaliacoes: list["Avaliacao"] = Relationship(back_populates="produto")
+    reservas: list["Reserva"] = Relationship(
         back_populates="produtos", link_model=ReservaProdutoLink
     )
 
@@ -61,36 +60,30 @@ class Produto(SQLModel, table=True):
 class Reserva(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
-    cliente_id: int = Field(foreign_key=CLIENTE_ID_FK)
+    # None em vendas presenciais (comprador sem cadastro)
+    cliente_id: int | None = Field(default=None, foreign_key=CLIENTE_ID_FK)
+    # nome informado pelo vendedor em vendas presenciais
+    nome_comprador: str | None = Field(default=None)
 
     valor: float = Field(default=0.0)
     concluida: bool = Field(default=False)
     valor_efetivo: float | None = Field(default=None)
-    data_conclusao: datetime | None = Field(default=None)
+    # horário local, sem fuso (mesmo formato das versões anteriores)
+    data_conclusao: datetime | None = Field(default=None, sa_type=DateTime)
 
-    cliente: "Cliente" = Relationship(back_populates="reservas")
-    produtos: List["Produto"] = Relationship(
+    cliente: Optional["Cliente"] = Relationship(back_populates="reservas")
+    produtos: list["Produto"] = Relationship(
         back_populates="reservas", link_model=ReservaProdutoLink
     )
 
+    @property
+    def presencial(self) -> bool:
+        return self.cliente_id is None
 
-class ReservaItemInput(SQLModel):
-    produto_id: int
-    quantidade: int = 1
-
-
-class ReservaCreate(SQLModel):
-    cliente_id: int | None = None
-    itens: List[ReservaItemInput] = []
-
-
-class ReservaUpdate(SQLModel):
-    cliente_id: int | None = None
-    itens: List[ReservaItemInput] | None = None
-
-
-class ValorEfetivoUpdate(SQLModel):
-    valor_efetivo: float | None = None
+    @property
+    def valor_final(self) -> float:
+        """Valor que de fato entrou no caixa (efetivo, se ajustado)."""
+        return self.valor_efetivo if self.valor_efetivo is not None else self.valor
 
 
 class Avaliacao(SQLModel, table=True):
@@ -102,10 +95,9 @@ class Avaliacao(SQLModel, table=True):
     nota: int
     texto: str
     dia: int
-    dia: int
     mes: int
     ano: int
-    horario: int
+    horario: int  # HHMM
 
     produto: "Produto" = Relationship(back_populates="avaliacoes")
     cliente: "Cliente" = Relationship(back_populates="avaliacoes")
@@ -128,9 +120,9 @@ class Carrinho(SQLModel, table=True):
     cliente_id: int | None = Field(default=None, foreign_key=CLIENTE_ID_FK)
 
     cliente: "Cliente" = Relationship(back_populates="carrinho")
-    produtos: List["Produto"] = Relationship(link_model=CarrinhoProdutoLink)
+    produtos: list["Produto"] = Relationship(link_model=CarrinhoProdutoLink)
 
-    
+
 class Loja(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
@@ -161,7 +153,3 @@ class Loja(SQLModel, table=True):
     horario: str = ""
     trocas: str = ""
     devolucao: str = ""
-
-class AvaliacaoCreate(SQLModel):
-    nota: int
-    texto: str

@@ -4,4 +4,4 @@ __pycache__
 *~
 database.db
 node_modules
-src/static/images
+src/openloja/static/images/
