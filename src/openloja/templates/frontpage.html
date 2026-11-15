@@ -6,8 +6,8 @@
     <title>{{ loja.nome if loja else "Minha Loja" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/theme.css">
-    <link rel="stylesheet" href="../static/frontpage.css">
-    <link rel="stylesheet" href="../static/modal.css">
+    <link rel="stylesheet" href="{{ static_url('frontpage.css') }}">
+    <link rel="stylesheet" href="{{ static_url('modal.css') }}">
 </head>
 <body>
 
@@ -187,8 +187,8 @@
         const WHATSAPP_LOJA = "{{ loja.whatsapp if loja else '' }}";
     </script>
 
-    <script src="/static/frontpage.js"></script>
-    <script src="/static/modal.js"></script>
+    <script src="{{ static_url('frontpage.js') }}"></script>
+    <script src="{{ static_url('modal.js') }}"></script>
     <script>
     if (usuarioLogado) {
         sincronizarCarrinho().then(() => {

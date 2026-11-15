@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ loja_atual().nome }}</title>
   <link rel="stylesheet" href="/theme.css">
-  <link rel="stylesheet" href="/static/login.css">
+  <link rel="stylesheet" href="{{ static_url('login.css') }}">
 
 </head>
 <body>
@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <script src="/static/homeScript.js"></script>
+  <script src="{{ static_url('homeScript.js') }}"></script>
 
 </body>
 </html>

@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ loja_atual().nome }} · Minha Conta</title>
     <link rel="stylesheet" href="/theme.css">
-    <link rel="stylesheet" href="../static/homeStyle.css">
-    <link rel="stylesheet" href="../static/dashboardStyle.css">
-    <link rel="stylesheet" href="../static/clientStyle.css">
+    <link rel="stylesheet" href="{{ static_url('homeStyle.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dashboardStyle.css') }}">
+    <link rel="stylesheet" href="{{ static_url('clientStyle.css') }}">
 </head>
 <body>
 {% set loja = loja_atual() %}
@@ -97,6 +97,6 @@
 
     </div>
 
-    <script src="../static/clientScript.js"></script>
+    <script src="{{ static_url('clientScript.js') }}"></script>
 </body>
 </html>

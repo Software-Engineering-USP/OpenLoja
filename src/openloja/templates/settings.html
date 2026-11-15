@@ -6,9 +6,9 @@
     <title>{{ loja_atual().nome }} · Configurações</title>
 
     <link rel="stylesheet" href="/theme.css">
-    <link rel="stylesheet" href="../static/homeStyle.css">
-    <link rel="stylesheet" href="../static/dashboardStyle.css">
-    <link rel="stylesheet" href="../static/settingsStyle.css">
+    <link rel="stylesheet" href="{{ static_url('homeStyle.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dashboardStyle.css') }}">
+    <link rel="stylesheet" href="{{ static_url('settingsStyle.css') }}">
 </head>
 <body>
 
@@ -160,7 +160,7 @@
 
 </div>
 
-<script src="../static/settingsScript.js"></script>
+<script src="{{ static_url('settingsScript.js') }}"></script>
 
 </body>
 </html>

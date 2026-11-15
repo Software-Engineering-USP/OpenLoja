@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ loja_atual().nome }} · Estoque</title>
     <link rel="stylesheet" href="/theme.css">
-    <link rel="stylesheet" href="../static/homeStyle.css">
-    <link rel="stylesheet" href="../static/dashboardStyle.css">
+    <link rel="stylesheet" href="{{ static_url('homeStyle.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dashboardStyle.css') }}">
 </head>
 <body>
 {% set loja = loja_atual() %}
@@ -118,6 +118,6 @@
         </div>
     </div>
 
-    <script src="../static/stockScript.js"></script>
+    <script src="{{ static_url('stockScript.js') }}"></script>
 </body>
 </html>
