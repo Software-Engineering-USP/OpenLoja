@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ loja.nome if loja else "Minha Loja" }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="../static/frontpage.css">
+    <link rel="stylesheet" href="../static/modal.css">
+</head>
+<body>
+
+    <header class="shop-header">
+
+        <!-- Main Navigation Bar -->
+        <nav class="navbar">
+            <!-- Search Bar (Busca em tempo real via JS) -->
+            <div class="search-container">
+                <input type="text" id="js-search-input" placeholder="Pesquise por nossos produtos...">
+                <button type="button"><i class="fas fa-search"></i></button>
+            </div>
+
+            <!-- Navigation Links -->
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <a href="/about" class="active">Sobre nós</a>
+            </ul>
+
+            <!-- Shop Icons / Utilities -->
+            <div class="header-actions">
+
+              <button id="open-login" class="login-btn" onclick="{% if usuario %}window.location.href='/cliente'{% else %}pagina_login(){% endif %}">
+                <i class="far fa-user"></i>
+		{% if usuario %}
+		<span> {{ usuario.nome }} </span>
+		{% else %}
+                <span>Entrar</span>
+		{% endif %}
+              </button>
+
+
+              <a href="#cart" id="open-cart" class="header-action">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Carrinho</span>
+                <span class="badge" id="cart-count" style="display: none;">0</span>
+              </a>
+
+            </div>
+
+            <div class="logo">
+                <a href="#home">
+                    {% if loja and loja.logo %}
+                    <img src="/static/{{ loja.logo }}" alt="{{ loja.nome }}" class="logo-img">
+                    {% endif %}
+                    <span>{{ loja.nome if loja else "Minha Loja" }}</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="frontpage-content">
+
+        <section class="catalog-section">
+            <div class="catalog-header">
+
+                <!-- Filtros por Tags/Categorias -->
+                <div class="tag-filters">
+                    <button class="tag-btn active" data-tag="all">
+                        Todos
+                    </button>
+
+                    {% for tag in tags %}
+                    <button class="tag-btn" data-tag="{{ tag|lower }}">
+                        {{ tag }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Grid de Produtos Dinâmico -->
+	    <section id="catalog-view">
+              <div class="product-grid" id="product-grid">
+
+                {% for produto in produtos %}
+                <article
+                    class="product-card"
+                    data-tag="{{ produto.tag|lower }}"
+                    data-categoria="{{ produto.categoria|lower }}"
+                    data-descricao="{{ produto.descricao|lower }}"
+                >
+                  <a
+		    href="#"
+		    class="product-image"
+		    data-id="{{ produto.id }}"
+		    >
+		    <span class="card-badge new-badge">Novo</span>
+
+		    {% if produto.imagem %}
+		    <img src="/static/{{ produto.imagem }}" alt="{{ produto.nome }}">
+		    {% endif %}
+		  </a>
+                  <div class="product-info">
+                    <a
+		      href="#"
+		      class="product-title-link"
+		      data-id="{{ produto.id }}"
+		      >
+		      <h3 class="product-title">{{ produto.nome }}</h3>
+		    </a>
+                    <p class="product-category">{{ produto.categoria }}</p>
+                    <p class="product-price">R$ {{ produto.preco }}</p>
+                    <button
+                        class="buy-btn"
+                        data-id="{{ produto.id }}"
+                        data-nome="{{ produto.nome }}"
+                        data-preco="{{ produto.preco }}"
+                        data-imagem="/static/{{ produto.imagem }}">
+                        Adicionar ao Carrinho
+                    </button>
+                  </div>
+                </article>
+                {% endfor %}
+
+              </div>
+	    </section>
+
+            <div id="no-results" class="hidden-message">
+                Nenhum produto encontrado para a sua busca.
+            </div>
+        </section>
+	<section id="product-view" style="display:none">
+
+	</section>
+    </main>
+
+
+
+
+    <!-- ==================== MODAL CARRINHO ==================== -->
+
+    <div id="cart-sidebar-overlay" class="sidebar-overlay">
+
+        <aside id="cart-sidebar" class="cart-sidebar">
+
+            <div class="cart-header">
+
+                <h2>Meu Carrinho</h2>
+
+                <button
+                    id="close-cart"
+                    aria-label="Fechar carrinho">
+                    &times;
+                </button>
+
+            </div>
+
+            <div class="cart-items" id="cart-items">
+
+            </div>
+
+            <div class="cart-footer">
+
+                <div class="cart-total">
+
+                    <span>Total</span>
+
+                    <strong id="cart-total">R$ 0,00</strong>
+
+                </div>
+
+                <button class="checkout-btn">
+
+                    Finalizar Compra
+
+                </button>
+
+            </div>
+
+        </aside>
+
+    </div>
+    <script>
+        // só clientes têm carrinho no servidor (vendedores usam o do navegador)
+        const usuarioLogado = {{ "true" if usuario_cliente else "false" }};
+        const vendedorLogado = {{ "true" if usuario and not usuario_cliente else "false" }};
+        const WHATSAPP_LOJA = "{{ loja.whatsapp if loja else '' }}";
+    </script>
+
+    <script src="/static/frontpage.js"></script>
+    <script src="/static/modal.js"></script>
+    <script>
+    if (usuarioLogado) {
+        sincronizarCarrinho().then(() => {
+            carregarCarrinho();
+        });
+    }
+    </script>
+</body>
+</html>

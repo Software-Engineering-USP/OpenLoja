@@ -1,0 +1,4 @@
+# dependências de execução (versões testadas)
+fastapi[standard]==0.163.1
+sqlmodel==0.0.50
+itsdangerous==2.2.0

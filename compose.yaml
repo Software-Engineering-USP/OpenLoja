@@ -1,0 +1,36 @@
+services:
+  web:
+    build: .
+    image: openloja:latest
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # banco SQLite (/data/database.db) e imagens enviadas (/data/images)
+      - data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # `docker compose watch`: sincroniza o código e reinicia o app ao editar
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /app/src
+        - action: rebuild
+          path: ./requirements.txt
+
+volumes:
+  data:
