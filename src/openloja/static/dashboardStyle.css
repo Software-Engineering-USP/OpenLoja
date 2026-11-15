@@ -228,3 +228,208 @@
   gap: 10px;
   margin-top: 8px;
 }
+
+/* ---------- Estatísticas detalhadas ---------- */
+.stats-section {
+  margin-top: 28px;
+}
+.stats-panel.two-col.even {
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 800px) {
+  .stats-panel.two-col.even {
+    grid-template-columns: 1fr;
+  }
+}
+.section-header,
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.section-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.panel-header h2 {
+  margin: 0;
+}
+.filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* controle segmentado (filtros de métrica/período) */
+.segmented {
+  display: inline-flex;
+  background: #eef0f6;
+  border-radius: 10px;
+  padding: 3px;
+}
+.segmented button {
+  border: none;
+  background: transparent;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+}
+.segmented button.ativo {
+  background: white;
+  color: var(--cor-primaria, #232978);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.month-nav select,
+.month-nav input {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #dde1ec;
+  font-size: 14px;
+  background: white;
+  min-width: 140px;
+}
+.month-nav .icon-btn {
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 12px;
+}
+.month-nav .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chart-box {
+  position: relative;
+  height: 260px;
+}
+.chart-hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #6b7280 !important;
+}
+
+/* KPIs do mês selecionado */
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.mini-card {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mini-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+.mini-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+.delta {
+  font-size: 12px;
+  color: #6b7280;
+}
+.delta.sobe {
+  color: #15803d;
+}
+.delta.desce {
+  color: #b91c1c;
+}
+
+/* barra online x presencial */
+.split-bar {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #eef0f6;
+  margin-bottom: 16px;
+}
+.split-bar span {
+  display: block;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.split-online,
+.swatch-online {
+  background: var(--cor-primaria, #232978);
+}
+.split-presencial,
+.swatch-presencial {
+  background: var(--cor-destaque, #f59e0b);
+}
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 8px;
+}
+.sub-title {
+  margin-top: 26px !important;
+  font-size: 17px !important;
+}
+
+/* lista de vendas do dia */
+.day-summary {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.data-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.data-table .itens-cell {
+  color: #4b5563;
+  font-size: 14px;
+}
+.canal {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #eef0f6;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* telas pequenas: o .container padrão (70vw) fica estreito demais */
+@media (max-width: 800px) {
+  .container {
+    max-width: none;
+    padding: 16px;
+  }
+  .mini-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chart-box {
+    height: 220px;
+  }
+}
+.stats-panel.two-col > .panel {
+  min-width: 0;
+}

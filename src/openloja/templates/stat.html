@@ -16,7 +16,7 @@
                 <div class="brand-icon">{{ loja.nome[0]|upper if loja.nome else "S" }}</div>
                 <div class="brand-info">
                     <h1>Estatísticas</h1>
-                    <p>Visão geral do desempenho mensal para sua loja</p>
+                    <p>Desempenho da loja por mês, por dia e por horário</p>
                 </div>
             </div>
             <nav class="action-buttons">
@@ -31,12 +31,17 @@
         <div class="dashboard-grid">
             <div class="card">
                 <h2>Receita Mensal</h2>
-                <div class="value">R$ {{ estatisticas.receita_mensal }}</div>
+                <div class="value">{{ estatisticas.receita_mensal_fmt }}</div>
             </div>
             <div class="card">
                 <h2>Vendas este mês</h2>
                 <div class="value">{{ estatisticas.vendas_mes }}</div>
-                </div>
+            </div>
+            <div class="card">
+                <h2>Ticket médio</h2>
+                <div class="value">{{ estatisticas.ticket_medio_fmt }}</div>
+                <small>Valor médio por venda neste mês</small>
+            </div>
             <div class="card">
                 <h2>Avaliação Média</h2>
                 <div class="value">{{ estatisticas.nota_media }}</div>
@@ -46,8 +51,22 @@
 
         <div class="stats-panel two-col">
             <div class="panel">
-                <h2>Receita ao Longo do Tempo</h2>
-                <canvas id="revenue-chart" height="220"></canvas>
+                <div class="panel-header">
+                    <h2>Desempenho por mês</h2>
+                    <div class="filtros">
+                        <div class="segmented" data-grupo="metrica-meses" role="group" aria-label="Métrica">
+                            <button type="button" data-valor="receita" class="ativo">Receita</button>
+                            <button type="button" data-valor="vendas">Vendas</button>
+                            <button type="button" data-valor="ticket_medio">Ticket médio</button>
+                        </div>
+                        <div class="segmented" data-grupo="periodo-meses" role="group" aria-label="Período">
+                            <button type="button" data-valor="12" class="ativo">12 meses</button>
+                            <button type="button" data-valor="0">Tudo</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-box"><canvas id="months-chart" aria-label="Gráfico de desempenho por mês" role="img"></canvas></div>
+                <p class="chart-hint">Clique em um mês para ver os detalhes abaixo.</p>
             </div>
 
             <div class="panel">
@@ -64,7 +83,103 @@
             </div>
         </div>
 
-        <div class="stats-panel">
+        <section class="stats-section" id="detalhe-mes">
+            <div class="section-header">
+                <h2>Detalhes do mês</h2>
+                <div class="month-nav">
+                    <button type="button" class="icon-btn" id="mes-anterior" aria-label="Mês anterior">‹</button>
+                    <select id="seletor-mes" aria-label="Mês"></select>
+                    <button type="button" class="icon-btn" id="mes-seguinte" aria-label="Próximo mês">›</button>
+                </div>
+            </div>
+
+            <div class="mini-grid" id="kpis-mes">
+                <div class="mini-card"><span class="mini-label">Receita</span><span class="mini-value" data-kpi="receita">–</span><span class="delta" data-delta="receita"></span></div>
+                <div class="mini-card"><span class="mini-label">Vendas</span><span class="mini-value" data-kpi="vendas">–</span><span class="delta" data-delta="vendas"></span></div>
+                <div class="mini-card"><span class="mini-label">Ticket médio</span><span class="mini-value" data-kpi="ticket_medio">–</span><span class="delta" data-delta="ticket_medio"></span></div>
+                <div class="mini-card"><span class="mini-label">Itens vendidos</span><span class="mini-value" data-kpi="itens">–</span><span class="delta" data-delta="itens"></span></div>
+                <div class="mini-card"><span class="mini-label">Clientes (online)</span><span class="mini-value" data-kpi="clientes">–</span><span class="delta" data-delta="clientes"></span></div>
+            </div>
+
+            <div class="stats-panel two-col">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Vendas por dia</h2>
+                        <div class="segmented" data-grupo="metrica-dias" role="group" aria-label="Métrica">
+                            <button type="button" data-valor="receita" class="ativo">Receita</button>
+                            <button type="button" data-valor="vendas">Vendas</button>
+                        </div>
+                    </div>
+                    <div class="chart-box"><canvas id="days-chart" aria-label="Gráfico de vendas por dia do mês" role="img"></canvas></div>
+                    <p class="chart-hint" id="melhor-dia">Clique em um dia para ver as vendas dele.</p>
+                </div>
+
+                <div class="panel">
+                    <h2>Canal de venda</h2>
+                    <div class="split-bar" id="split-canal" aria-hidden="true">
+                        <span class="split-online"></span><span class="split-presencial"></span>
+                    </div>
+                    <div class="stat-row"><span><i class="swatch swatch-online"></i>Online</span><span id="canal-online">–</span></div>
+                    <div class="stat-row"><span><i class="swatch swatch-presencial"></i>Presencial</span><span id="canal-presencial">–</span></div>
+
+                    <h2 class="sub-title">Mais vendidos no mês</h2>
+                    <div id="top-produtos-mes"><p class="empty-row">Carregando…</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section" id="vendas-dia">
+            <div class="section-header">
+                <h2>Vendas do dia</h2>
+                <div class="month-nav">
+                    <button type="button" class="icon-btn" id="dia-anterior" aria-label="Dia anterior">‹</button>
+                    <input type="date" id="seletor-dia" aria-label="Dia">
+                    <button type="button" class="icon-btn" id="dia-seguinte" aria-label="Próximo dia">›</button>
+                </div>
+            </div>
+            <div class="panel">
+                <p class="day-summary" id="resumo-dia"></p>
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Hora</th><th>Comprador</th><th>Canal</th><th>Itens</th><th class="num">Valor</th></tr>
+                        </thead>
+                        <tbody id="tabela-dia">
+                            <tr><td colspan="5" class="empty-row">Carregando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section" id="padroes">
+            <div class="section-header">
+                <h2>Padrões de venda</h2>
+                <div class="filtros">
+                    <div class="segmented" data-grupo="metrica-padroes" role="group" aria-label="Métrica">
+                        <button type="button" data-valor="receita" class="ativo">Receita</button>
+                        <button type="button" data-valor="vendas">Vendas</button>
+                    </div>
+                    <div class="segmented" data-grupo="periodo-padroes" role="group" aria-label="Período">
+                        <button type="button" data-valor="30">30 dias</button>
+                        <button type="button" data-valor="90" class="ativo">90 dias</button>
+                        <button type="button" data-valor="0">Tudo</button>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-panel two-col even">
+                <div class="panel">
+                    <h2>Por dia da semana</h2>
+                    <div class="chart-box"><canvas id="weekday-chart" aria-label="Gráfico de vendas por dia da semana" role="img"></canvas></div>
+                </div>
+                <div class="panel">
+                    <h2>Por horário</h2>
+                    <div class="chart-box"><canvas id="hours-chart" aria-label="Gráfico de vendas por hora do dia" role="img"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <div class="stats-panel stats-section">
             <div class="panel">
                 <h2>Avaliações Recentes</h2>
                 <!-- BACKEND LOOP (Jinja2) -->
