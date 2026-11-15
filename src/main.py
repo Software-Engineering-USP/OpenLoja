@@ -71,8 +71,8 @@ PRODUCT_NOT_FOUND = "Produto não encontrado"
 STATIC_IMAGES_DIR = "static/images"
 
 # setup do SQL
-arquivo_sqlite = "database.db"
-url_sqlite = f"sqlite:///{arquivo_sqlite}"
+# DATABASE_URL permite trocar o local do banco (ex.: volume no Docker)
+url_sqlite = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 engine = create_engine(url_sqlite)
 
 

@@ -3,3 +3,8 @@ __pycache__/
 .venv/
 venv/
 .env
+.git/
+.github/
+project.zip
+**/database.db
+src/static/images/*
