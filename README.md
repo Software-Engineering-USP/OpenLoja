@@ -71,4 +71,15 @@ No Docker, o banco SQLite e as imagens enviadas ficam no volume `data`
 Bancos criados por versões anteriores são atualizados automaticamente ao iniciar,
 e senhas antigas (em texto puro) passam a ser guardadas com hash no próximo login.
 
-Há softwares de Lint e verificação de código a cada commit e push. Verifique se todos arquivos e modificações passam nos testes.
+### CI
+
+A cada push e pull request, o GitHub Actions (`.github/workflows/ci.yml`) roda o
+lint (ruff), os testes e um build + smoke test da imagem Docker. Para rodar as
+mesmas verificações localmente (só precisa de Docker):
+
+```sh
+scripts/ci.sh              # lint, testes e imagem Docker
+scripts/ci.sh --no-docker  # só lint e testes
+```
+
+Também há hooks de pre-commit (`pre-commit install`) para lint a cada commit.
