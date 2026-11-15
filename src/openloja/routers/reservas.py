@@ -49,13 +49,9 @@ def criar_reserva(dados: ReservaCreate, user: ActiveUser, session: SessionDep):
     reserva = Reserva()
 
     if isinstance(user, Vendedor):
-        if dados.cliente_id is None and dados.nome_comprador is None:
-            raise HTTPException(
-                400,
-                "Informe o cliente para quem a reserva será criada "
-                "ou o nome do comprador (venda presencial).",
-            )
-        svc.definir_comprador(session, reserva, dados.cliente_id, dados.nome_comprador)
+        svc.definir_comprador(
+            session, reserva, dados.cliente_id, dados.nome_comprador, obrigatorio=True
+        )
     else:
         if dados.concluir:
             raise HTTPException(403, "Apenas vendedores podem efetivar vendas.")
@@ -153,8 +149,7 @@ def editar_valor_efetivo(
     if dados.valor_efetivo is None:
         raise HTTPException(400, "Informe o novo valor efetivo.")
 
-    if dados.valor_efetivo < 0:
-        raise HTTPException(400, "O valor efetivo não pode ser negativo.")
+    svc.validar_valor_efetivo(dados.valor_efetivo)
 
     reserva = svc.buscar_reserva(session, reserva_id)
 

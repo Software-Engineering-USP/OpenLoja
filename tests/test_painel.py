@@ -317,20 +317,18 @@ def test_statistics_top_produtos_ordenado_por_vendas(client):
     criar_usuario(client, "joao")
     cliente_id = id_do_cliente(client, "joao")
 
-    client.post(
-        "/reservas",
-        json={
-            "cliente_id": cliente_id,
-            "itens": [{"produto_id": produto_mais_vendido, "quantidade": 5}],
-        },
-    )
-    client.post(
-        "/reservas",
-        json={
-            "cliente_id": cliente_id,
-            "itens": [{"produto_id": produto_menos_vendido, "quantidade": 1}],
-        },
-    )
+    for produto_id, quantidade in (
+        (produto_mais_vendido, 5),
+        (produto_menos_vendido, 1),
+    ):
+        reserva = client.post(
+            "/reservas",
+            json={
+                "cliente_id": cliente_id,
+                "itens": [{"produto_id": produto_id, "quantidade": quantidade}],
+            },
+        ).json()
+        client.put(f"/reservas/{reserva['id']}/completar", json={})
 
     resposta = client.get("/statistics")
     assert resposta.status_code == 200

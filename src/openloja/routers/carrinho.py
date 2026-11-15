@@ -5,9 +5,9 @@ from sqlmodel import Session, select
 
 from ..database import SessionDep
 from ..dependencies import ClienteLogado
-from ..models import Carrinho, CarrinhoProdutoLink, Produto, Reserva, ReservaProdutoLink
-from ..schemas import CarrinhoItem
-from ..services.reservas import verificar_estoque
+from ..models import Carrinho, CarrinhoProdutoLink, Produto, Reserva
+from ..schemas import CarrinhoItem, ReservaItemInput
+from ..services.reservas import definir_itens, verificar_estoque
 
 router = APIRouter()
 
@@ -164,24 +164,22 @@ def checkout(user: ClienteLogado, session: SessionDep):
     carrinho = _get_or_create_carrinho(session, user.id)
     links = _links(session, carrinho.id)
 
-    if not links:
+    # itens de produtos que foram removidos da loja somem do carrinho
+    validos = [link for link in links if session.get(Produto, link.produto_id)]
+
+    if not validos:
         raise HTTPException(status_code=400, detail="O carrinho está vazio.")
 
     itens = verificar_estoque(
-        session, ((link.produto_id, link.quantidade) for link in links)
+        session, ((link.produto_id, link.quantidade) for link in validos)
     )
-    valor_total = float(sum(produto.preco * qtd for produto, qtd in itens))
 
-    reserva = Reserva(cliente_id=user.id, valor=valor_total, concluida=False)
-    session.add(reserva)
-    session.flush()
-
-    for produto, quantidade in itens:
-        session.add(
-            ReservaProdutoLink(
-                reserva_id=reserva.id, produto_id=produto.id, quantidade=quantidade
-            )
-        )
+    reserva = Reserva(cliente_id=user.id)
+    definir_itens(
+        session,
+        reserva,
+        [ReservaItemInput(produto_id=p.id, quantidade=q) for p, q in itens],
+    )
 
     for link in links:
         session.delete(link)
@@ -194,5 +192,5 @@ def checkout(user: ClienteLogado, session: SessionDep):
             {"nome": produto.nome, "preco": produto.preco, "quantidade": quantidade}
             for produto, quantidade in itens
         ],
-        "total": valor_total,
+        "total": reserva.valor,
     }

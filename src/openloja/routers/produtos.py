@@ -8,8 +8,17 @@ from sqlmodel import Session, col, select
 
 from ..database import SessionDep
 from ..dependencies import Admin, ClienteLogado, OptionalUser
-from ..models import Avaliacao, Cliente, Loja, Produto
+from ..models import (
+    Avaliacao,
+    CarrinhoProdutoLink,
+    Cliente,
+    Loja,
+    Produto,
+    Reserva,
+    ReservaProdutoLink,
+)
 from ..schemas import AvaliacaoCreate
+from ..services.reservas import recalcular_valor
 from ..services.uploads import salvar_imagem
 from ..templating import templates
 
@@ -136,7 +145,28 @@ def enviar_imagem(
 @router.delete("/produtos/{produto_id}", responses=NOT_FOUND)
 def deletar_produto(produto_id: int, admin: Admin, session: SessionDep):
     produto = _produto_ou_404(session, produto_id)
+
+    # reservas pendentes com o produto perdem o item e precisam ter o
+    # valor recalculado (as já concluídas mantêm o valor da venda)
+    pendentes = session.exec(
+        select(Reserva)
+        .join(ReservaProdutoLink, ReservaProdutoLink.reserva_id == Reserva.id)
+        .where(ReservaProdutoLink.produto_id == produto_id)
+        .where(col(Reserva.concluida).is_(False))
+    ).all()
+
+    # o produto também sai dos carrinhos, senão o checkout falharia
+    for link in session.exec(
+        select(CarrinhoProdutoLink).where(CarrinhoProdutoLink.produto_id == produto_id)
+    ).all():
+        session.delete(link)
+
     session.delete(produto)
+    session.flush()
+
+    for reserva in pendentes:
+        recalcular_valor(session, reserva)
+
     session.commit()
     return {"message": "Produto removido"}
 

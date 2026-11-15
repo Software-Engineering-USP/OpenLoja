@@ -152,7 +152,7 @@ function montarResumoWhatsApp(dados) {
   let mensagem = `Olá! Gostaria de confirmar meu pedido #${dados.reserva_id}:\n\n`;
 
   dados.itens.forEach((item) => {
-    mensagem += `• ${item.quantidade}x ${escapeHtml(item.nome)} - R$ ${item.preco.toFixed(2)}\n`;
+    mensagem += `• ${item.quantidade}x ${item.nome} - R$ ${item.preco.toFixed(2)}\n`;
   });
 
   mensagem += `\nTotal: R$ ${dados.total.toFixed(2)}`;
@@ -161,6 +161,11 @@ function montarResumoWhatsApp(dados) {
 }
 
 checkoutBtn.addEventListener("click", async function () {
+  if (vendedorLogado) {
+    alert("Apenas clientes podem finalizar compras. Entre com uma conta de cliente.");
+    return;
+  }
+
   if (!usuarioLogado) {
     window.location.href = "/paginalogin";
     return;

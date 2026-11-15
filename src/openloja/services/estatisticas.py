@@ -95,8 +95,13 @@ def painel_estatisticas(session: Session, agora: datetime | None = None) -> dict
 
     produtos = session.exec(select(Produto)).all()
 
+    # só vendas efetivadas contam (reservas pendentes podem nunca ser pagas)
     vendas_por_produto: dict[int, int] = {}
-    for link in session.exec(select(ReservaProdutoLink)).all():
+    for link in session.exec(
+        select(ReservaProdutoLink)
+        .join(Reserva, col(Reserva.id) == ReservaProdutoLink.reserva_id)
+        .where(Reserva.concluida)
+    ).all():
         if link.produto_id is not None:
             vendas_por_produto[link.produto_id] = (
                 vendas_por_produto.get(link.produto_id, 0) + link.quantidade

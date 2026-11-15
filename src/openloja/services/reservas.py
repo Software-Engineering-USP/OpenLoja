@@ -65,7 +65,24 @@ def definir_itens(
             )
         )
 
-    reserva.valor = sum(produtos[pid].preco * qtd for pid, qtd in quantidades.items())
+    reserva.valor = float(
+        sum(produtos[pid].preco * qtd for pid, qtd in quantidades.items())
+    )
+
+
+def recalcular_valor(session: Session, reserva: Reserva) -> None:
+    """Recalcula o valor a partir dos itens que ainda existem."""
+    reserva.valor = float(
+        sum(
+            produto.preco * link.quantidade
+            for link, produto in session.exec(
+                select(ReservaProdutoLink, Produto)
+                .join(Produto, col(Produto.id) == ReservaProdutoLink.produto_id)
+                .where(ReservaProdutoLink.reserva_id == reserva.id)
+            ).all()
+        )
+    )
+    session.add(reserva)
 
 
 def links_da_reserva(session: Session, reserva_id: int) -> Sequence[ReservaProdutoLink]:
@@ -88,23 +105,19 @@ def buscar_cliente(session: Session, cliente_id: int) -> Cliente:
     return cliente
 
 
-def normalizar_nome_comprador(nome: str | None) -> str | None:
-    if nome is None:
-        return None
-    nome = nome.strip()
-    if not nome:
-        raise HTTPException(400, "Informe o nome do comprador.")
-    return nome
-
-
 def definir_comprador(
     session: Session,
     reserva: Reserva,
     cliente_id: int | None,
     nome_comprador: str | None,
+    obrigatorio: bool = False,
 ) -> None:
-    """Associa a reserva a um cliente cadastrado ou a um comprador presencial."""
-    nome = normalizar_nome_comprador(nome_comprador)
+    """Associa a reserva a um cliente cadastrado ou a um comprador presencial.
+
+    Um nome em branco é tratado como ausente, para que formulários que
+    sempre enviam os dois campos funcionem ao escolher um cliente.
+    """
+    nome = (nome_comprador or "").strip() or None
 
     if cliente_id is not None and nome is not None:
         raise HTTPException(
@@ -117,6 +130,14 @@ def definir_comprador(
     elif nome is not None:
         reserva.cliente_id = None
         reserva.nome_comprador = nome
+    elif nome_comprador is not None:
+        raise HTTPException(400, "Informe o nome do comprador.")
+    elif obrigatorio:
+        raise HTTPException(
+            400,
+            "Informe o cliente para quem a reserva será criada "
+            "ou o nome do comprador (venda presencial).",
+        )
 
 
 def verificar_estoque(
@@ -242,6 +263,7 @@ def visao_reserva(reserva: Reserva, itens: list[dict]) -> dict:
         "valor": reserva.valor,
         "concluida": reserva.concluida,
         "valor_efetivo": reserva.valor_efetivo,
+        "valor_final": reserva.valor_final,
         "data_conclusao": reserva.data_conclusao,
         "itens": itens,
         "itens_json": json.dumps(itens),
@@ -268,9 +290,5 @@ def historico_cliente(session: Session, cliente_id: int) -> dict:
         "reservas": reservas,
         "total_pedidos": len(reservas),
         "total_pendentes": sum(1 for r in reservas if not r["concluida"]),
-        "total_gasto": sum(
-            r["valor_efetivo"] if r["valor_efetivo"] is not None else r["valor"]
-            for r in reservas
-            if r["concluida"]
-        ),
+        "total_gasto": sum(r["valor_final"] for r in reservas if r["concluida"]),
     }
