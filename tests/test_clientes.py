@@ -82,6 +82,8 @@ def test_cliente_ve_seu_proprio_historico(client):
     resposta = client.get("/cliente")
     assert resposta.status_code == 200
     assert "Mochila" in resposta.text
+    # o cliente não vê quanto já gastou na loja
+    assert "Total Gasto" not in resposta.text
 
 
 # ---------------------------------------------------------------------

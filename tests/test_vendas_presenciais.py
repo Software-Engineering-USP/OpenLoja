@@ -144,6 +144,14 @@ def test_orders_mostra_comprador_presencial(client):
     assert "Presencial" in pagina.text
 
 
+def test_orders_tem_um_unico_botao_de_nova_venda(client):
+    vendedor_logado(client)
+    pagina = client.get("/orders")
+
+    assert pagina.text.count('id="add-order-btn"') == 1
+    assert "add-walkin-btn" not in pagina.text
+
+
 def test_editar_troca_cliente_por_venda_presencial_e_volta(client):
     vendedor_logado(client)
     produto_id = criar_produto(client)

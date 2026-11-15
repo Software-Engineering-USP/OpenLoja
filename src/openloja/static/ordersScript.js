@@ -59,8 +59,6 @@ radiosTipo.forEach((radio) =>
     atualizarTipoComprador();
     // vendas presenciais normalmente são pagas na hora
     if (!modalReservaId.value) {
-      modalTitle.textContent =
-        tipoComprador() === "presencial" ? "Venda Presencial" : "Nova Reserva";
       modalEfetivar.checked = tipoComprador() === "presencial";
       atualizarCampoValor();
     }
@@ -150,11 +148,7 @@ function abrirModal({
   presencial = false,
   nomeComprador = "",
 } = {}) {
-  if (id) {
-    modalTitle.textContent = "Editar Reserva";
-  } else {
-    modalTitle.textContent = presencial ? "Venda Presencial" : "Nova Reserva";
-  }
+  modalTitle.textContent = id ? "Editar Reserva" : "Nova Venda";
   modalReservaId.value = id;
   modalCliente.value = clienteId;
   modalNomeComprador.value = nomeComprador;
@@ -191,9 +185,6 @@ function fecharModal() {
 document
   .getElementById("add-order-btn")
   .addEventListener("click", () => abrirModal());
-document
-  .getElementById("add-walkin-btn")
-  .addEventListener("click", () => abrirModal({ presencial: true }));
 document.getElementById("modal-cancel").addEventListener("click", fecharModal);
 
 document.querySelectorAll(".edit-btn").forEach((btn) => {
