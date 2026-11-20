@@ -36,12 +36,22 @@ def formatar_telefone(valor: str | None) -> str:
     return f"{ddi}({ddd}) {numero[:-4]}-{numero[-4:]}"
 
 
-def link_whatsapp(valor: str | None) -> str:
-    """Link wa.me para o número (adiciona DDI 55 se vier só DDD + número)."""
+def _com_ddi(valor: str | None) -> str:
+    """Só os dígitos, com DDI 55 se vier apenas DDD + número."""
     digitos = apenas_digitos(valor)
     if len(digitos) in (10, 11):
         digitos = "55" + digitos
-    return f"https://wa.me/{digitos}"
+    return digitos
+
+
+def link_whatsapp(valor: str | None) -> str:
+    """Link wa.me para o número."""
+    return f"https://wa.me/{_com_ddi(valor)}"
+
+
+def link_telefone(valor: str | None) -> str:
+    """Link tel: para o número (abre o discador no celular)."""
+    return f"tel:+{_com_ddi(valor)}"
 
 
 def obter_loja_atual() -> Loja:
@@ -69,3 +79,4 @@ templates.env.globals["loja_atual"] = obter_loja_atual
 templates.env.filters["moeda"] = formatar_moeda
 templates.env.filters["telefone"] = formatar_telefone
 templates.env.filters["link_whatsapp"] = link_whatsapp
+templates.env.filters["link_telefone"] = link_telefone

@@ -88,13 +88,14 @@ def test_cliente_nao_acessa_buscar_loja(client):
 
 
 def test_formatar_telefone_e_link_whatsapp():
-    from openloja.templating import formatar_telefone, link_whatsapp
+    from openloja.templating import formatar_telefone, link_telefone, link_whatsapp
 
     assert formatar_telefone("5511999999999") == "+55 (11) 99999-9999"
     assert formatar_telefone("1133334444") == "(11) 3333-4444"
     assert formatar_telefone("abc") == "abc"
     assert link_whatsapp("+55 (11) 99999-9999") == "https://wa.me/5511999999999"
     assert link_whatsapp("11999999999") == "https://wa.me/5511999999999"
+    assert link_telefone("(11) 3333-4444") == "tel:+551133334444"
 
 
 def test_sobre_nos_mostra_whatsapp_formatado_com_link(client):
@@ -106,3 +107,14 @@ def test_sobre_nos_mostra_whatsapp_formatado_com_link(client):
     assert resposta.status_code == 200
     assert 'href="https://wa.me/5511988887777"' in resposta.text
     assert "+55 (11) 98888-7777" in resposta.text
+
+
+def test_sobre_nos_mostra_telefone_formatado_com_link(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    client.put("/loja", json={"telefone": "1133334444"})
+
+    resposta = client.get("/about")
+    assert resposta.status_code == 200
+    assert 'href="tel:+551133334444"' in resposta.text
+    assert "(11) 3333-4444" in resposta.text

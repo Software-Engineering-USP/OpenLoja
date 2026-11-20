@@ -5,3 +5,4 @@ __pycache__
 database.db
 node_modules
 src/openloja/static/images/
+uv.lock

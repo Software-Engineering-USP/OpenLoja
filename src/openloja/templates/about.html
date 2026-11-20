@@ -58,7 +58,9 @@
         {% endif %}
 
         {% if loja.telefone %}
-        <p><strong>Telefone:</strong> {{ loja.telefone }}</p>
+        <p><strong>Telefone:</strong>
+            <a href="{{ loja.telefone | link_telefone }}" class="contact-link">{{ loja.telefone | telefone }}</a>
+        </p>
         {% endif %}
 
         {% if loja.whatsapp %}
