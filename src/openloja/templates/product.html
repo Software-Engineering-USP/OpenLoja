@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{ loja_atual().nome }} · {{ produto.nome }}</title>
+<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="{{ static_url('homeStyle.css') }}">
+<link rel="stylesheet" href="{{ static_url('dashboardStyle.css') }}">
+<link rel="stylesheet" href="{{ static_url('productStyle.css') }}">
+</head>
+<body>
+
+<header class="product-topbar">
+<a href="/stock" class="back-link">Estoque</a>
+</header>
+
+<main class="product-page">
+<div class="breadcrumb">
+<a href="/home">Home</a> / <a href="/stock">Estoque</a> / <span>{{ produto.nome }}</span>
+</div>
+
+<section class="product-detail">
+<div class="product-detail-image">
+<img src="/static/{{ produto.imagem }}" alt="{{ produto.nome }}">
+</div>
+
+<div class="product-detail-info">
+<h1>{{ produto.nome }}</h1>
+
+<p class="product-detail-price">${{ produto.preco }}</p>
+
+                {% if produto.quantidade_em_estoque > 0 %}
+
+<p class="product-detail-category">
+    <strong>Categoria:</strong> {{ produto.categoria }}
+</p>
+
+<span class="product-detail-tag">
+    {{ produto.tag }}
+</span>
+
+<div class="product-detail-description">
+    <h3>Descrição</h3>
+    <p>{{ produto.descricao }}</p>
+</div>
+
+<p class="stock-info in-stock">Disponível ({{ produto.quantidade_em_estoque }}{{ produto.unidade_medida }})</p>
+                {% else %}
+<p class="stock-info out-of-stock">Fora de estoque</p>
+                {% endif %}
+
+<div class="owner-actions">
+<button
+type="button"
+id="edit-product-btn"
+class="primary-btn"
+data-id="{{ produto.id }}"
+data-nome="{{ produto.nome }}"
+data-descricao="{{ produto.descricao }}"
+data-categoria="{{ produto.categoria }}"
+data-tag="{{ produto.tag }}"
+data-quantidade="{{ produto.quantidade_em_estoque }}"
+data-preco="{{ produto.preco }}"
+>
+    Editar Produto
+</button>
+<button type="button" id="delete-product-btn" class="secondary-btn danger-btn-solid" data-id="{{ produto.id }}">
+                        Remover Produto
+</button>
+</div>
+</div>
+</section>
+
+<section class="reviews-section">
+<h2>Avaliações</h2>
+<!-- BACKEND LOOP (Jinja2) -->
+            {% for avaliacao in avaliacoes %}
+<div class="review-card">
+<div class="review-header">
+<span class="review-stars">{{ "★" * avaliacao.nota }}{{ "☆" * (5 - avaliacao.nota) }}</span>
+<span class="review-date">{{ avaliacao.dia }}/{{ avaliacao.horario }}</span>
+</div>
+<p class="review-text">{{ avaliacao.texto }}</p>
+</div>
+            {% else %}
+<p class="empty-message">Ainda não há avaliações para este produto.</p>
+            {% endfor %}
+</section>
+</main>
+
+<div id="product-modal" class="modal hidden">
+<div class="modal-content">
+<h2>Editar Produto</h2>
+<input type="hidden" id="modal-produto-id">
+<input type="text" id="modal-nome" placeholder="Nome do produto">
+<textarea id="modal-descricao" placeholder="Descrição do produto"></textarea>
+<input type="text" id="modal-categoria" placeholder="Categoria">
+<input
+    type="text"
+    id="modal-tag"
+    placeholder="Tags (separadas por vírgula)">
+<input type="number" id="modal-quantidade" placeholder="Quantidade em estoque" min="0">
+<input type="number" id="modal-preco" placeholder="Preço" min="0" step="0.01">
+<div class="modal-actions">
+<button type="button" id="modal-cancel" class="secondary-btn">Cancelar</button>
+<button type="button" id="modal-save" class="primary-btn">Salvar</button>
+</div>
+</div>
+</div>
+
+<script src="{{ static_url('productScript.js') }}"></script>
+</body>
+</html>

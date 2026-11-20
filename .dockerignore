@@ -1,5 +1,12 @@
-__pycache__/
-*.pyc
+**/__pycache__/
+**/*.pyc
 .venv/
 venv/
 .env
+.git/
+.github/
+.ruff_cache/
+.pytest_cache/
+tests/
+**/database.db
+src/openloja/static/images/
