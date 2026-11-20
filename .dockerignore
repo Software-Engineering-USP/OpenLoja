@@ -8,6 +8,5 @@ venv/
 .ruff_cache/
 .pytest_cache/
 tests/
-project.zip
 **/database.db
 src/openloja/static/images/
