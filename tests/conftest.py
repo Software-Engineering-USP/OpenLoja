@@ -5,8 +5,7 @@ Cada teste roda contra um banco SQLite temporário e isolado, então
 rodar os testes nunca mexe no database.db real.
 
 Como rodar (na raiz do repositório):
-    pip install -r requirements-dev.txt
-    pytest
+    uv run pytest
 """
 
 import os

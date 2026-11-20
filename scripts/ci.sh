@@ -9,24 +9,27 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-PYTHON_IMAGE="python:3.12-slim"
-PIP_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/pip"
-mkdir -p "$PIP_CACHE"
+UV_IMAGE="ghcr.io/astral-sh/uv:0.9.26-python3.12-bookworm-slim"
+UV_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/uv"
+mkdir -p "$UV_CACHE"
 
-echo "==> Lint e testes ($PYTHON_IMAGE)"
-# roda com o seu usuário para não deixar arquivos de root no repositório
+echo "==> Lint e testes ($UV_IMAGE)"
+# roda com o seu usuário para não deixar arquivos de root no repositório;
+# o ambiente fica em /tmp/venv para não mexer no .venv local
 docker run --rm \
   -u "$(id -u):$(id -g)" \
   -e HOME=/tmp \
   -e PYTHONDONTWRITEBYTECODE=1 \
-  -v "$PIP_CACHE:/tmp/.cache/pip" \
+  -e UV_CACHE_DIR=/tmp/.cache/uv \
+  -e UV_PROJECT_ENVIRONMENT=/tmp/venv \
+  -e UV_LINK_MODE=copy \
+  -v "$UV_CACHE:/tmp/.cache/uv" \
   -v "$PWD:/w" -w /w \
-  "$PYTHON_IMAGE" sh -euc '
-    pip install --user -q --disable-pip-version-check --default-timeout=120 \
-      -r requirements-dev.txt
-    python -m ruff check --no-cache src tests
-    python -m ruff format --no-cache --check src tests
-    python -m pytest -q -p no:cacheprovider
+  "$UV_IMAGE" sh -euc '
+    uv sync --locked --quiet
+    uv run --no-sync ruff check --no-cache src tests
+    uv run --no-sync ruff format --no-cache --check src tests
+    uv run --no-sync pytest -q -p no:cacheprovider
   '
 
 if [[ "${1:-}" == "--no-docker" ]]; then

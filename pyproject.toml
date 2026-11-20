@@ -3,6 +3,19 @@ name = "openloja"
 version = "0.2.0"
 description = "Loja virtual e controle de estoque"
 requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.163.1",
+    "sqlmodel>=0.0.50",
+    "itsdangerous>=2.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff==0.6.9",  # mesma versão do hook em .pre-commit-config.yaml
+    "httpx>=0.28.1",
+    "pre-commit>=4.7.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

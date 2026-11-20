@@ -39,13 +39,19 @@ tests/                # testes (pytest), um arquivo por assunto
 
 ## Ambiente de Desenvolvimento
 
-Com um ambiente virtual:
+As dependências são gerenciadas com o [uv](https://docs.astral.sh/uv/):
+declaradas no `pyproject.toml` e com as versões exatas travadas no `uv.lock`
+(usado igualmente no CI e na imagem Docker).
 
 ```sh
-pip install -r requirements-dev.txt
-fastapi dev src/openloja/main.py   # app em http://localhost:8000
-pytest                             # testes
+uv sync                                   # cria o .venv com as dependências do lock
+uv run fastapi dev src/openloja/main.py   # app em http://localhost:8000
+uv run pytest                             # testes
 ```
+
+Para mudar dependências, use `uv add <pacote>` / `uv remove <pacote>`
+(`--dev` para as de desenvolvimento) e `uv lock --upgrade` para atualizar
+as versões; em todos os casos faça commit do `uv.lock` junto.
 
 Ou com Docker Compose:
 

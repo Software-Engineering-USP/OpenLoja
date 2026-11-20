@@ -30,7 +30,7 @@ services:
           path: ./src
           target: /app/src
         - action: rebuild
-          path: ./requirements.txt
+          path: ./uv.lock
 
 volumes:
   data:

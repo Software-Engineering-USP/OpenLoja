@@ -1,6 +1,0 @@
-# dependências de desenvolvimento e testes
--r requirements.txt
-pytest==9.2.0
-ruff==0.6.9
-httpx==0.28.1
-pre-commit==4.7.0
