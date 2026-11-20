@@ -62,7 +62,9 @@
         {% endif %}
 
         {% if loja.whatsapp %}
-        <p><strong>WhatsApp:</strong> {{ loja.whatsapp }}</p>
+        <p><strong>WhatsApp:</strong>
+            <a href="{{ loja.whatsapp | link_whatsapp }}" target="_blank" rel="noopener" class="contact-link">{{ loja.whatsapp | telefone }}</a>
+        </p>
         {% endif %}
 
         {% if loja.endereco %}
