@@ -24,6 +24,8 @@ def show_profile(request: Request, admin: Admin, session: SessionDep):
         request=request,
         name="homeOwner.html",
         context={
+            "receita_hoje_fmt": formatar_moeda(resumo["receita_hoje"]),
+            "vendas_hoje": resumo["vendas_hoje"],
             "receita_mensal_fmt": formatar_moeda(resumo["receita_mensal"]),
             "itens_em_estoque": resumo["itens_em_estoque"],
             "valor_em_estoque_fmt": formatar_moeda(resumo["valor_em_estoque"]),

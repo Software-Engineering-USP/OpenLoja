@@ -31,6 +31,11 @@
 
         <div class="dashboard-grid">
             <a class="card card-link" href="/statistics">
+                <h2>Vendas de Hoje</h2>
+                <div class="value">{{ receita_hoje_fmt }}</div>
+                <small>{{ vendas_hoje }} venda{{ "s" if vendas_hoje != 1 }} concluída{{ "s" if vendas_hoje != 1 }} hoje</small>
+            </a>
+            <a class="card card-link" href="/statistics">
                 <h2>Receita Mensal</h2>
                 <div class="value">{{ receita_mensal_fmt }}</div>
                 <small>Receita gerada este mês</small>

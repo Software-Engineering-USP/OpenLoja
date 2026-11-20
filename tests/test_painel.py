@@ -337,3 +337,48 @@ def test_statistics_top_produtos_ordenado_por_vendas(client):
     assert pos_mais_vendido != -1
     assert pos_menos_vendido != -1
     assert pos_mais_vendido < pos_menos_vendido
+
+
+def _venda(session, valor, data, valor_efetivo=None):
+    session.add(
+        Reserva(
+            nome_comprador="Maria",
+            valor=valor,
+            valor_efetivo=valor_efetivo,
+            concluida=True,
+            estoque_baixado=True,
+            data_conclusao=data,
+        )
+    )
+
+
+def test_resumo_home_soma_vendas_do_dia(client):
+    from openloja.services import estatisticas
+
+    agora = datetime(2026, 3, 15, 18, 0)
+    with sessao_db() as session:
+        _venda(session, 50, datetime(2026, 3, 15, 9, 30))
+        _venda(session, 40, datetime(2026, 3, 15, 17, 0), valor_efetivo=35)
+        _venda(session, 100, datetime(2026, 3, 14, 23, 59))  # ontem
+        _venda(session, 70, datetime(2025, 3, 15, 12, 0))  # mesmo dia, outro ano
+        session.add(Reserva(nome_comprador="João", valor=999))  # pendente
+        session.commit()
+
+        resumo = estatisticas.resumo_home(session, agora=agora)
+
+    assert resumo["receita_hoje"] == 85
+    assert resumo["vendas_hoje"] == 2
+    assert resumo["receita_mensal"] == 185
+
+
+def test_home_do_lojista_mostra_vendas_de_hoje(client):
+    criar_usuario(client, "dono")
+    login(client, "dono")
+    with sessao_db() as session:
+        _venda(session, 1234.5, datetime.now())
+        session.commit()
+
+    resposta = client.get("/home")
+    assert "Vendas de Hoje" in resposta.text
+    assert "R$ 1.234,50" in resposta.text
+    assert "1 venda concluída hoje" in resposta.text

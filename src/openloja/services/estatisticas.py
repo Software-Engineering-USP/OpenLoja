@@ -46,6 +46,7 @@ def resumo_home(session: Session, agora: datetime | None = None) -> dict:
     produtos = session.exec(select(Produto)).all()
     vendas = vendas_concluidas(session)
     vendas_mes = [r for r in vendas if _mesmo_mes(r.data_conclusao, agora)]
+    vendas_hoje = [r for r in vendas_mes if r.data_conclusao.date() == agora.date()]
 
     # "novos clientes" = clientes cuja primeira compra concluída foi neste
     # mês (vendas presenciais não têm cliente cadastrado e não contam)
@@ -60,6 +61,8 @@ def resumo_home(session: Session, agora: datetime | None = None) -> dict:
     return {
         "receita_mensal": sum(r.valor_final for r in vendas_mes),
         "vendas_mes": len(vendas_mes),
+        "receita_hoje": sum(r.valor_final for r in vendas_hoje),
+        "vendas_hoje": len(vendas_hoje),
         "itens_em_estoque": sum(p.quantidade_em_estoque for p in produtos),
         "valor_em_estoque": sum(p.preco * p.quantidade_em_estoque for p in produtos),
         "novos_clientes": sum(
