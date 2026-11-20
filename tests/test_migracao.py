@@ -44,6 +44,12 @@ def test_banco_antigo_ganha_suporte_a_venda_presencial(tmp_path):
                 "SELECT id, cliente_id, valor, valor_efetivo FROM reserva"
             ).one()
         assert tuple(linha) == (1, 1, 50.0, 45.0)
+
+        with engine.connect() as conn:
+            baixado = conn.exec_driver_sql(
+                "SELECT estoque_baixado FROM reserva"
+            ).scalar_one()
+        assert baixado == 1  # venda concluída já tinha descontado o estoque
         engine.dispose()
     finally:
         database.engine = original

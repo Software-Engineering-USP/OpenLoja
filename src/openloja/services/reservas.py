@@ -43,7 +43,12 @@ def carregar_produtos(
 def definir_itens(
     session: Session, reserva: Reserva, itens: Sequence[ReservaItemInput]
 ) -> None:
-    """Substitui os itens da reserva e recalcula o valor."""
+    """Substitui os itens da reserva, recalcula o valor e reserva o estoque.
+
+    Os itens antigos (se já tinham saído do estoque) são devolvidos antes
+    de conferir os novos, então editar uma reserva não "concorre" com ela
+    mesma. Falta de estoque gera 400 e nada deve ser salvo.
+    """
     if not itens:
         raise HTTPException(400, "A reserva precisa ter ao menos um produto.")
 
@@ -54,20 +59,43 @@ def definir_itens(
         session.add(reserva)
         session.flush()
     else:
+        devolver_estoque(session, reserva)
         for link in links_da_reserva(session, reserva.id):
             session.delete(link)
         session.flush()
 
+    # só baixa o estoque depois de conferir todos os itens
     for produto_id, quantidade in quantidades.items():
+        _conferir_estoque(produtos[produto_id], quantidade)
+
+    for produto_id, quantidade in quantidades.items():
+        produtos[produto_id].quantidade_em_estoque -= quantidade
+        session.add(produtos[produto_id])
         session.add(
             ReservaProdutoLink(
                 reserva_id=reserva.id, produto_id=produto_id, quantidade=quantidade
             )
         )
 
+    reserva.estoque_baixado = True
     reserva.valor = float(
         sum(produtos[pid].preco * qtd for pid, qtd in quantidades.items())
     )
+
+
+def devolver_estoque(session: Session, reserva: Reserva) -> None:
+    """Devolve ao estoque os itens da reserva, se já tinham saído dele."""
+    if not reserva.estoque_baixado:
+        return
+
+    for link in links_da_reserva(session, reserva.id):
+        produto = session.get(Produto, link.produto_id)
+        if produto:
+            produto.quantidade_em_estoque += link.quantidade
+            session.add(produto)
+
+    reserva.estoque_baixado = False
+    session.add(reserva)
 
 
 def recalcular_valor(session: Session, reserva: Reserva) -> None:
@@ -140,6 +168,18 @@ def definir_comprador(
         )
 
 
+def _conferir_estoque(produto: Produto, quantidade: int) -> None:
+    if produto.quantidade_em_estoque < quantidade:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Estoque insuficiente para '{produto.nome}'. "
+                f"Disponível: {produto.quantidade_em_estoque}, "
+                f"Solicitado: {quantidade}"
+            ),
+        )
+
+
 def verificar_estoque(
     session: Session, quantidades: Iterable[tuple[int, int]]
 ) -> list[tuple[Produto, int]]:
@@ -152,15 +192,7 @@ def verificar_estoque(
                 status_code=404,
                 detail=f"Produto com ID {produto_id} não encontrado.",
             )
-        if produto.quantidade_em_estoque < quantidade:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Estoque insuficiente para '{produto.nome}'. "
-                    f"Disponível: {produto.quantidade_em_estoque}, "
-                    f"Solicitado: {quantidade}"
-                ),
-            )
+        _conferir_estoque(produto, quantidade)
         resultado.append((produto, quantidade))
     return resultado
 
@@ -171,21 +203,27 @@ def validar_valor_efetivo(valor: float | None) -> None:
 
 
 def efetivar(session: Session, reserva: Reserva, valor_efetivo: float | None) -> None:
-    """Conclui a venda: desconta o estoque e registra valor e data."""
+    """Conclui a venda e registra valor e data.
+
+    O estoque normalmente já foi baixado quando a reserva foi criada; só
+    reservas pendentes de versões anteriores descontam aqui.
+    """
     if reserva.concluida:
         raise HTTPException(400, "Reserva já está concluída")
 
     validar_valor_efetivo(valor_efetivo)
 
-    links = links_da_reserva(session, reserva.id)
-    itens = verificar_estoque(
-        session, ((link.produto_id, link.quantidade) for link in links)
-    )
+    if not reserva.estoque_baixado:
+        links = links_da_reserva(session, reserva.id)
+        itens = verificar_estoque(
+            session, ((link.produto_id, link.quantidade) for link in links)
+        )
 
-    # só reduz o estoque depois de validar todos os itens
-    for produto, quantidade in itens:
-        produto.quantidade_em_estoque -= quantidade
-        session.add(produto)
+        # só reduz o estoque depois de validar todos os itens
+        for produto, quantidade in itens:
+            produto.quantidade_em_estoque -= quantidade
+            session.add(produto)
+        reserva.estoque_baixado = True
 
     reserva.concluida = True
     reserva.valor_efetivo = (
@@ -196,17 +234,10 @@ def efetivar(session: Session, reserva: Reserva, valor_efetivo: float | None) ->
 
 
 def remover(session: Session, reserva: Reserva) -> None:
-    """Remove a reserva; se já efetivada, devolve os itens ao estoque."""
-    links = links_da_reserva(session, reserva.id)
+    """Remove a reserva (pendente ou efetivada), devolvendo os itens ao estoque."""
+    devolver_estoque(session, reserva)
 
-    if reserva.concluida:
-        for link in links:
-            produto = session.get(Produto, link.produto_id)
-            if produto:
-                produto.quantidade_em_estoque += link.quantidade
-                session.add(produto)
-
-    for link in links:
+    for link in links_da_reserva(session, reserva.id):
         session.delete(link)
     session.flush()
 

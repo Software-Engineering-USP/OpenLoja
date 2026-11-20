@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, text
 from sqlmodel import Field, Relationship, SQLModel
 
 CLIENTE_ID_FK = "cliente.id"
@@ -67,6 +67,13 @@ class Reserva(SQLModel, table=True):
 
     valor: float = Field(default=0.0)
     concluida: bool = Field(default=False)
+    # True quando os itens já saíram do estoque. Reservas pendentes
+    # descontam o estoque ao serem criadas, para que o mesmo item não seja
+    # vendido duas vezes; pendentes de versões anteriores ficam False e só
+    # descontam ao serem efetivadas.
+    estoque_baixado: bool = Field(
+        default=False, sa_column_kwargs={"server_default": text("0")}
+    )
     valor_efetivo: float | None = Field(default=None)
     # horário local, sem fuso (mesmo formato das versões anteriores)
     data_conclusao: datetime | None = Field(default=None, sa_type=DateTime)

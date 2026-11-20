@@ -67,9 +67,27 @@ def _migrate_sqlite() -> None:
     precisa_recriar = (
         "nome_comprador" not in colunas or not colunas["cliente_id"]["nullable"]
     )
-    if not precisa_recriar:
-        return
+    if precisa_recriar:
+        _recriar_reserva(colunas)
+    elif "estoque_baixado" not in colunas:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE reserva ADD COLUMN estoque_baixado "
+                    "BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )
 
+    # reservas pendentes passaram a descontar o estoque. As concluídas
+    # antes disso já tinham descontado; as pendentes antigas ainda não.
+    if "estoque_baixado" not in colunas:
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE reserva SET estoque_baixado = 1 WHERE concluida = 1")
+            )
+
+
+def _recriar_reserva(colunas: dict) -> None:
     novas_colunas = [c.name for c in Reserva.__table__.columns]
     comuns = [c for c in novas_colunas if c in colunas]
     lista = ", ".join(comuns)

@@ -32,8 +32,8 @@ def test_vendedor_cria_venda_presencial_pendente(client):
     assert dados["nome_comprador"] == "Maria Silva"
     assert dados["valor"] == 60
     assert dados["concluida"] is False
-    # pendente: ainda não desconta o estoque
-    assert client.get(f"/produtos/{produto_id}").json()["quantidade_em_estoque"] == 5
+    # pendente já reserva o estoque, para o item não ser vendido duas vezes
+    assert client.get(f"/produtos/{produto_id}").json()["quantidade_em_estoque"] == 3
 
 
 def test_venda_presencial_efetivada_na_hora_desconta_estoque(client):

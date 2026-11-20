@@ -67,7 +67,7 @@ def test_concluir_reserva_reduz_estoque(client):
     assert resposta_produto.json()["quantidade_em_estoque"] == 2
 
 
-def test_concluir_reserva_sem_estoque_suficiente_falha(client):
+def test_reserva_sem_estoque_suficiente_falha(client):
     criar_usuario(client, "dono")
     login(client, "dono")
     produto_id = criar_produto(client, estoque=1)
@@ -81,10 +81,9 @@ def test_concluir_reserva_sem_estoque_suficiente_falha(client):
             "itens": [{"produto_id": produto_id, "quantidade": 5}],
         },
     )
-    reserva_id = resposta.json()["id"]
-
-    resposta = client.put(f"/reservas/{reserva_id}/completar", json={})
     assert resposta.status_code == 400
+    assert client.get("/reservas").json() == []
+    assert client.get(f"/produtos/{produto_id}").json()["quantidade_em_estoque"] == 1
 
 
 def test_deletar_reserva_concluida_repoe_estoque(client):
